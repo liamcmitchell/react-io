@@ -1,0 +1,27 @@
+{
+  "name": "react-io",
+  "version": "1.0.0",
+  "description": "Data loading API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liamcmitchell/react-io.git"
+  },
+  "keywords": [
+    "react"
+  ],
+  "author": "Liam Mitchell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/liamcmitchell/react-io/issues"
+  },
+  "homepage": "https://github.com/liamcmitchell/react-io#readme",
+  "dependencies": {
+    "lodash": "^4.13.1",
+    "react": "^15.1.0",
+    "rxjs": "^5.0.0-beta.8"
+  }
+}
