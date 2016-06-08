@@ -1,4 +1,4 @@
-import Rx from 'rx'
+import create from '@rxjs/rx/observable/create'
 
 export default function sourceMethods(methods) {
   return function(request) {
@@ -7,13 +7,13 @@ export default function sourceMethods(methods) {
     if (handler) {
       // Return value is either an observable or a promise.
       if (request.method === 'OBSERVE') {
-        return Rx.Observable.create(observer =>
-          handler.call(null, request, observer)
+        return create(observer =>
+          handler(request, observer)
         )
       }
       else {
         return new Promise((resolve, reject) =>
-          handler.call(null, request, {resolve, reject})
+          handler(request, {resolve, reject})
         )
       }
     }

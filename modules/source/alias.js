@@ -1,6 +1,7 @@
-import urlToArray from './url-to-array'
+import {urlToArray} from '../url'
 
-export default function sourceAlias(upstreamUrl) {
+// Requires recursion (request.source).
+export default function alias(upstreamUrl) {
   upstreamUrl = urlToArray(upstreamUrl)
 
   return function(request) {
