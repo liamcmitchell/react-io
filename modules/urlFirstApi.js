@@ -1,4 +1,4 @@
-// Allow using with jQuery-like syntax: io('/user/auth').render()
+// Allow using with jQuery-like syntax: io('/user/auth').render(auth => <b>{auth}</b>)
 export default function urlFirstApi(source, methods = {}) {
   if (typeof source !== 'function') {
     throw new Error('Source must be a function')

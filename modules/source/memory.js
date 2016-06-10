@@ -31,24 +31,22 @@ export default function memorySource(initialValue) {
   const subject = new BehaviorSubject(initialValue)
 
   return methods({
-    OBSERVE: function(request, observer) {
+    OBSERVE: function(request) {
       if (request.url.length === 0) {
-        return subject.subscribe(observer)
+        return subject
       }
       else {
         return map(subject, get.bind(null, request.url))
-          .subscribe(observer)
       }
     },
-    SET: function(request, promise) {
+    SET: function(request) {
       if (request.url.length === 0) {
         subject.onNext(request.value)
-        promise.resolve()
       }
       else {
         subject.onNext(set(request.url, subject.getValue(), request.value))
-        promise.resolve()
       }
+      return Promise.resolve()
     }
   })
 }
