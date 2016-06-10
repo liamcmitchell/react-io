@@ -9,9 +9,9 @@ function getDisplayName(WrappedComponent) {
 
 // Provide component with io from context.
 // Optionally specify static io urls to add to props.
-// withIO([urls], WrappedComponent, [renderNull], [renderError])
+// withIO([urls], WrappedComponent, [renderWaiting], [renderError])
 // TODO: Is there a reason to prefer an API like redux connect?
-export default function withIO(urls, WrappedComponent, renderNull, renderError) {
+export default function withIO(urls, WrappedComponent, renderWaiting, renderError) {
   if (!WrappedComponent) {
     WrappedComponent = urls
     urls = null
@@ -44,7 +44,7 @@ export default function withIO(urls, WrappedComponent, renderNull, renderError) 
           {...data}
           {...this.props}
         />
-      , renderNull, renderError) : (
+      , renderWaiting, renderError) : (
         <WrappedComponent
           io={io}
           {...this.props}
