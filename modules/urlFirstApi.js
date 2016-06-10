@@ -5,12 +5,12 @@ export default function urlFirstApi(source, methods = {}) {
   }
 
   // The temp object to chain methods off.
-  function IO(url) {
+  function ioURL(url) {
     this.url = url
   }
 
   // Add methods to prototype.
-  IO.prototype = Object.assign({
+  ioURL.prototype = Object.assign({
     // Call is the only method with access to source, all requests have to go through this.
     call: function(request) {
       return source(Object.assign({url: this.url}, request))
@@ -21,6 +21,6 @@ export default function urlFirstApi(source, methods = {}) {
     if (!url) {
       throw new Error('Url required e.g. io(url)')
     }
-    return new IO(url)
+    return new ioURL(url)
   }
 }
