@@ -1,24 +1,21 @@
-import create from '@rxjs/rx/observable/create'
+import isObservable from '../isObservable'
 
 export default function sourceMethods(methods) {
   return function(request) {
-    const handler = methods[request.method] || methods.default
+    const {method} = request
+
+    // Allow fallback.
+    const handler = methods[method] || methods.default
 
     if (handler) {
-      // Return value is either an observable or a promise.
-      if (request.method === 'OBSERVE') {
-        return create(observer =>
-          handler(request, observer)
-        )
+      // Allow shorthand for observable.
+      if (method === 'OBSERVE' && isObservable(handler)) {
+        return handler
       }
-      else {
-        return new Promise((resolve, reject) =>
-          handler(request, {resolve, reject})
-        )
-      }
+      return handler(request)
     }
     else {
-      throw new Error('Method not supported.', request)
+      throw new Error('Method not found', request)
     }
   }
 }

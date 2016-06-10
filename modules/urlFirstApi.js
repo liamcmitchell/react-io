@@ -18,6 +18,9 @@ export default function urlFirstApi(source, methods = {}) {
   }, methods)
 
   return function io(url) {
+    if (!url) {
+      throw new Error('Url required e.g. io(url)')
+    }
     return new IO(url)
   }
 }
