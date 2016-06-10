@@ -1,3 +1,3 @@
 export default function isObservable(o) {
-  return o && typeof o.next === 'function'
+  return o && typeof o.subscribe === 'function'
 }

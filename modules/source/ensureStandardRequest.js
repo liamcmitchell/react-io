@@ -1,4 +1,6 @@
-import {isArrayUrl} from '../isUrl'
+import {isArrayUrl, urlToString} from '../url'
+import isObservable from '../isObservable'
+import isPromise from '../isPromise'
 
 // Enforce standard request format for all sources.
 export default function ensureStandardRequest(source) {
@@ -12,6 +14,19 @@ export default function ensureStandardRequest(source) {
       throw new Error('Method must be a string')
     }
 
-    return source(request)
+    const result = source(request)
+
+    if (request.method === 'OBSERVE') {
+      if (!isObservable(result)) {
+        throw new Error('Source must return observable for OBSERVE method: ' + urlToString(request.url))
+      }
+    }
+    else {
+      if (!isPromise(result)) {
+        throw new Error('Source must return promise for non-OBSERVE methods: ' + urlToString(request.url))
+      }
+    }
+
+    return result
   }
 }

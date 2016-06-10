@@ -28,8 +28,9 @@
   },
   "homepage": "https://github.com/liamcmitchell/react-io#readme",
   "dependencies": {
-    "lodash": "^4.13.1",
-    "@rxjs/rx": "^4.1.0"
+    "@rxjs/rx": "^4.1.0",
+    "hoist-non-react-statics": "^1.0.6",
+    "lodash": "^4.13.1"
   },
   "peerDependencies": {
     "react": "^15.1.0"

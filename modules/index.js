@@ -1,8 +1,9 @@
 import React, {PropTypes} from 'react'
+import flowRight from 'lodash/flowRight'
+
 import contextProviderComponent from './contextProviderComponent'
 import withContextFunction from './withContextFunction'
 import urlFirstApi from './urlFirstApi'
-import flowRight from 'lodash/flowRight'
 import allowRecursion from './source/allowRecursion'
 import ensureStandardRequest from './source/ensureStandardRequest'
 import allowNesting from './source/allowNesting'
@@ -25,8 +26,8 @@ export function createIO(source) {
     flowRight([
       handleMultipleUrls,
       allowNesting,
-      requireStringUrl,
       cache,
+      requireStringUrl,
       allowRecursion,
       ensureStandardRequest
     ])(source),

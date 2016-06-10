@@ -5,13 +5,13 @@ export default class Observable extends Component {
     observable: PropTypes.shape({
       subscribe: PropTypes.func.isRequired
     }).isRequired,
-    render: PropTypes.func,
+    renderValue: PropTypes.func,
     renderWaiting: PropTypes.func,
     renderError: PropTypes.func
   }
 
   static defaultProps = {
-    render: v => v,
+    renderValue: v => v,
     renderWaiting: () => null,
     renderError: defaultRenderError
   }
@@ -43,7 +43,7 @@ export default class Observable extends Component {
     this.setState({vdom: this.props.renderWaiting.call()})
 
     this.subscription = observable.subscribe(value => {
-      this.setState({vdom: this.props.render.call(null, value)})
+      this.setState({vdom: this.props.renderValue.call(null, value)})
     }, error => {
       this.setState({vdom: this.props.renderError.call(null, error, this.retry.bind(this))})
     })

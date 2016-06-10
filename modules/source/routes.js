@@ -11,7 +11,8 @@ export default function routes(routes) {
   })
 
   return function(request) {
-    const route = request.url[0]
+    // Index route is defined as empty string.
+    const route = request.url[0] || ''
 
     if (routes.hasOwnProperty(route)) {
       return routes[route](Object.assign({}, request, {
@@ -19,7 +20,8 @@ export default function routes(routes) {
       }))
     }
     else {
-      throw new Error('No source found for route ' + route)
+      // TODO: Better error message, what is the full url at this point?
+      throw new Error('No source found for route ' + (route || '[index]'))
     }
   }
 }
