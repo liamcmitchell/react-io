@@ -2,8 +2,8 @@
 export default function routes(routes) {
   // Check routes.
   Object.keys(routes).forEach(route => {
-    if (route.indexOf('/') !== -1) {
-      throw new Error('Route cannot contain /')
+    if (route.indexOf('/') !== 0 || route.indexOf('/', 1) !== -1) {
+      throw new Error('Route must start with and contain only one /')
     }
     if (typeof routes[route] !== 'function') {
       throw new Error('Route source must be a function')
@@ -11,8 +11,7 @@ export default function routes(routes) {
   })
 
   return function(request) {
-    // Index route is defined as empty string.
-    const route = request.url[0] || ''
+    const route = '/' + (request.url[0] || '')
 
     if (routes.hasOwnProperty(route)) {
       return routes[route](Object.assign({}, request, {
@@ -21,7 +20,7 @@ export default function routes(routes) {
     }
     else {
       // TODO: Better error message, what is the full url at this point?
-      throw new Error('No source found for route ' + (route || '[index]'))
+      throw new Error('No source found for route ' + route)
     }
   }
 }
