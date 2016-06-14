@@ -3,12 +3,11 @@ import tap from '@rxjs/rx/observable/tap'
 import _finally from '@rxjs/rx/observable/finally'
 import share from '@rxjs/rx/observable/share'
 import startWith from '@rxjs/rx/observable/startwith'
-import {urlToString} from '../url'
 
 // A cacheable observable needs to add itself to the cache on subscription
 // and remove itself on unsubscribe.
 function createCacheableObservable(source, cache, request) {
-  const url = urlToString(request.url)
+  const {url} = request
 
   return create(observer => {
     // If there is nothing in the cache, add it.

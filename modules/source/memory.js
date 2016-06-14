@@ -1,4 +1,5 @@
 import methods from './methods'
+import {urlToArray} from '../url'
 import BehaviorSubject from '@rxjs/rx/behaviorsubject'
 import map from '@rxjs/rx/map'
 import isArray from 'lodash/isArray'
@@ -32,19 +33,21 @@ export default function memorySource(initialValue) {
 
   return methods({
     OBSERVE: function(request) {
-      if (request.url.length === 0) {
+      const path = urlToArray(request.url)
+      if (path.length === 0) {
         return subject
       }
       else {
-        return map(subject, get.bind(null, request.url))
+        return map(subject, get.bind(null, path))
       }
     },
     SET: function(request) {
-      if (request.url.length === 0) {
+      const path = urlToArray(request.url)
+      if (path.length === 0) {
         subject.onNext(request.value)
       }
       else {
-        subject.onNext(set(request.url, subject.getValue(), request.value))
+        subject.onNext(set(path, subject.getValue(), request.value))
       }
       return Promise.resolve()
     }

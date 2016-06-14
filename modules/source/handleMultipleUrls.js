@@ -16,7 +16,6 @@ const combineLatest = array => _combineLatest.apply(null, array)
 // '/user'
 // ['/user', '/user/login']
 // {user: '/user', userLogin: '/user/login'}
-// Expects urls to be strings.
 export default function handleMultipleUrls(source) {
   return function(request) {
     const urls = request.url

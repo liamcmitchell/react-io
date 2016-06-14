@@ -6,7 +6,6 @@ import allowRecursion from './source/allowRecursion'
 import ensureStandardRequest from './source/ensureStandardRequest'
 import allowNesting from './source/allowNesting'
 import handleMultipleUrls from './source/handleMultipleUrls'
-import requireStringUrl from './source/requireStringUrl'
 import cache from './source/cache'
 import Observable from './Observable'
 
@@ -17,7 +16,6 @@ export default function createIO(source) {
       handleMultipleUrls,
       allowNesting,
       cache,
-      requireStringUrl,
       allowRecursion,
       ensureStandardRequest
     ])(source),

@@ -6,16 +6,14 @@ const parse = JSON.parse.bind(JSON)
 // Stringifies request.value and parses OBSERVE and GET.
 // Requires recursion (request.source).
 export default function jsonSource(request) {
-  const newRequest = Object.assign({
-    url: request.url.slice(1)
-  }, request)
+  request = Object.assign({}, request)
 
   // If sending a value, transform.
   if (request.hasOwnProperty('value')) {
-    newRequest.value = JSON.stringify(request.value, null, 2)
+    request.value = JSON.stringify(request.value, null, 2)
   }
 
-  const result = request.source(newRequest)
+  const result = request.source(request)
 
   if (request.method === 'OBSERVE') {
     return map(result, parse)

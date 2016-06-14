@@ -11,11 +11,15 @@ export default function routes(routes) {
   })
 
   return function(request) {
-    const route = '/' + (request.url[0] || '')
+    const url = request.url || '/'
+    const nextIndex = url.indexOf('/', 1)
+    const route = nextIndex === -1 ?
+      url :
+      url.slice(0, nextIndex)
 
     if (routes.hasOwnProperty(route)) {
       return routes[route](Object.assign({}, request, {
-        url: request.url.slice(1)
+        url: nextIndex === -1 ? '' : url.slice(nextIndex)
       }))
     }
     else {
