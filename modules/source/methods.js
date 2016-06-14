@@ -36,8 +36,9 @@ export default function sourceMethods(handlers) {
       () => _OBSERVE :
       _OBSERVE
 
+  // TODO: Move GET/OBSERVE translation into another function?
+  // This Would make this behaviour explicit.
   handlers = Object.assign({}, handlers, {
-    originalHandlers: handlers,
     GET: GET ?
       GET :
       // If we have OBSERVE but not GET, convert observe to promise.
