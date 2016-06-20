@@ -1,23 +1,22 @@
 import isString from 'lodash/isString'
 import isArray from 'lodash/isArray'
 import isObject from 'lodash/isObject'
-import isObservable from '../isObservable'
-import isPromise from '../isPromise'
 import zipObject from 'lodash/zipObject'
 import keys from 'lodash/keys'
 import map from 'lodash/map'
-import _combineLatest from '@rxjs/rx/observable/combinelatest'
-import map$ from '@rxjs/rx/observable/map'
 
-// Workaround for https://github.com/Reactive-Extensions/RxJS/issues/1258
-const combineLatest = array => _combineLatest.apply(null, array)
+import {combineLatest} from 'rxjs/observable/combineLatest'
+import {map as map$} from 'rxjs/operator/map'
+
+import isObservable from '../isObservable'
+import isPromise from '../isPromise'
 
 // Allow URLs in multiple shapes:
 // '/user'
 // ['/user', '/user/login']
 // {user: '/user', userLogin: '/user/login'}
-export default function handleMultipleUrls(source) {
-  return function(request) {
+export default function wrapMultipleUrls(source) {
+  return function multipleUrls(request) {
     const urls = request.url
 
     if (isString(urls)) {
@@ -27,20 +26,20 @@ export default function handleMultipleUrls(source) {
 
     else if (isArray(urls)) {
       // [url, url] -> [val, val]
-      const array = urls.map(url => source(Object.assign({}, request, {url})))
+      const results = urls.map(url => source(Object.assign({}, request, {url})))
       return request.method === 'OBSERVE' ?
-        combineLatest(array) :
-        Promise.all(array)
+        combineLatest(results) :
+        Promise.all(results)
     }
 
     else if (isObject(urls) && !isPromise(urls) && !isObservable(urls)) {
       // {k1: url, k2: url} -> {k1: val, k2: val}
       const ks = keys(urls)
-      const array = map(urls, url => source(Object.assign({}, request, {url})))
-      const combine = results => zipObject(ks, results)
+      const results = map(urls, url => source(Object.assign({}, request, {url})))
+      const combine = values => zipObject(ks, values)
       return request.method === 'OBSERVE' ?
-        map$(combineLatest(array), combine) :
-        Promise.all(array).then(combine)
+        combineLatest(results)::map$(combine) :
+        Promise.all(results).then(combine)
     }
 
     else {

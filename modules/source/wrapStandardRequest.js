@@ -3,8 +3,8 @@ import isObservable from '../isObservable'
 import isPromise from '../isPromise'
 
 // Enforce standard request format for all sources.
-export default function ensureStandardRequest(source) {
-  return function(request) {
+export default function wrapStandardRequest(source) {
+  return function standardRequest(request) {
     const {url} = request
 
     // For simplicity we want all urls to be a string.

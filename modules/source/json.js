@@ -1,4 +1,4 @@
-import map from '@rxjs/rx/observable/map'
+import {map} from 'rxjs/operator/map'
 
 const parse = JSON.parse.bind(JSON)
 
@@ -16,7 +16,7 @@ export default function jsonSource(request) {
   const result = request.source(request)
 
   if (request.method === 'OBSERVE') {
-    return map(result, parse)
+    return result::map(parse)
   }
   else if (request.method === 'GET') {
     return result.next(parse)

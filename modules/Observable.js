@@ -49,17 +49,17 @@ export default class Observable extends Component {
     })
 
     // Remove previous subscription.
-    oldSubscription && oldSubscription.dispose()
+    oldSubscription && oldSubscription.unsubscribe()
   }
 
   retry() {
-    this.subscription.dispose()
+    this.subscription.unsubscribe()
     delete this.subscribedObservable
     this.subscribe(this.props.observable)
   }
 
   componentWillUnmount() {
-    this.subscription.dispose()
+    this.subscription.unsubscribe()
   }
 
   render() {

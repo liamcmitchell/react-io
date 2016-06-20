@@ -1,7 +1,7 @@
 import methods from './methods'
 import {urlToArray} from '../url'
-import BehaviorSubject from '@rxjs/rx/behaviorsubject'
-import map from '@rxjs/rx/map'
+import {BehaviorSubject} from 'rxjs/BehaviorSubject'
+import {map} from 'rxjs/operator/map'
 import isArray from 'lodash/isArray'
 import clone from 'lodash/clone'
 
@@ -38,7 +38,7 @@ export default function memorySource(initialValue) {
         return subject
       }
       else {
-        return map(subject, get.bind(null, path))
+        return subject::map(get.bind(null, path))
       }
     },
     SET: function(request) {
