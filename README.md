@@ -1,24 +1,8 @@
 # react-io
-Declaritive data API
+React bindings for [url-io](https://github.com/liamcmitchell/url-io)
 Request and mutate data using a standard interface passed through React context.
 
-## io(url)
-The standard interface to read and mutate data.
-
-Returns an object that represents data at a given URL.
-
-It can be consumed as both an [Observable](https://github.com/zenparsing/es-observable) (with .subscribe) and a [Promise](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Promise) (with .next).
-
-A URL is a string starting with a forward slash e.g. '/user'
-
-It is possible to read and mutate data at multiple URLs in the same request.
-```javascript
-io('/user').next(auth => {})
-io(['/user', '/auth']).next(([user, auth]) => {})
-io({user: '/user', auth: '/auth'}).next(({user, auth}) => {})
-```
-
-### io(url).render(renderValue, [renderWaiting], [renderError])
+### renderIO(renderValue, [renderWaiting], [renderError])
 Returns a React element that will render value, waiting and error using the given functions.
 
 ```javascript
@@ -28,15 +12,52 @@ renderError(error, retry) // default: renders error in red box with retry button
 ```
 
 ```javascript
-io('/user').render(user => <div>{user + '!'}</div>)
+import React from 'react'
+import {createIO} from 'url-io'
+import {renderIO} from 'react-io'
+import source from './source'
+
+// Add to the IO object on creation:
+const io = createIO(source, {
+  render: renderIO
+})
+
+// Then use to render from source:
+function Widget() {
+  return <div>
+    {io('/user').render(user => <div>{user + '!'}</div>)}
+
+    {io({user: '/user', auth: '/auth'}).render(
+      ({user, auth}) => <div>{user + auth + '!'}</div>,
+      () => <div>Loading...</div>,
+      (error, retry) => <div onClick={retry}>Error, click to retry.</div>
+    )}
+  </div>
+}
 ```
 
+## Passing IO through context
+
+## IOProvider
+Adds IO to context. Use once at the root of your app.
+
 ```javascript
-io({user: '/user', auth: '/auth'}).render(
-  ({user, auth}) => <div>{user + auth + '!'}</div>,
-  () => <div>Loading...</div>,
-  (error, retry) => <div onClick={retry}>Error, click to retry.</div>
-)
+import React from 'react'
+import {createIO} from 'url-io'
+import {IOProvider, renderIO} from 'react-io'
+import source from './source'
+
+// Add to the IO object on creation:
+const io = createIO(source, {
+  render: renderIO
+})
+
+export default function App() {
+  return <IOProvider io={io}>
+    ...
+  </IOProvider>
+}
+
 ```
 
 ## withIO([urls], WrappedComponent, [renderWaiting], [renderError])
