@@ -2,7 +2,7 @@ import React from 'react'
 import Observable from './Observable'
 
 // Intended to be added to IO prototype.
-export default function renderIO(renderValue, renderWaiting, renderError) { // eslint-disable-line
+export default function render(renderValue, renderWaiting, renderError) { // eslint-disable-line
   return (
     <Observable
       observable={this}
