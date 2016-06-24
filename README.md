@@ -2,7 +2,7 @@
 React bindings for [url-io](https://github.com/liamcmitchell/url-io)
 Request and mutate data using a standard interface passed through React context.
 
-### renderIO(renderValue, [renderWaiting], [renderError])
+### render(renderValue, [renderWaiting], [renderError])
 Returns a React element that will render value, waiting and error using the given functions.
 
 ```javascript
@@ -14,12 +14,12 @@ renderError(error, retry) // default: renders error in red box with retry button
 ```javascript
 import React from 'react'
 import {createIO} from 'url-io'
-import {renderIO} from 'react-io'
+import {render} from 'react-io'
 import source from './source'
 
 // Add to the IO object on creation:
 const io = createIO(source, {
-  render: renderIO
+  render: render
 })
 
 // Then use to render from source:
@@ -44,12 +44,12 @@ Adds IO to context. Use once at the root of your app.
 ```javascript
 import React from 'react'
 import {createIO} from 'url-io'
-import {IOProvider, renderIO} from 'react-io'
+import {IOProvider, render} from 'react-io'
 import source from './source'
 
 // Add to the IO object on creation:
 const io = createIO(source, {
-  render: renderIO
+  render: render
 })
 
 export default function App() {
