@@ -2,8 +2,8 @@
 React bindings for [url-io](https://github.com/liamcmitchell/url-io)
 Request and mutate data using a standard interface passed through React context.
 
-### render(renderValue, [renderWaiting], [renderError])
-Returns a React element that will render value, waiting and error using the given functions.
+### ::render(renderValue, [renderWaiting], [renderError])
+Call on an observable to return a React element that will render value, waiting and error using the given functions.
 
 ```javascript
 renderValue(value) // required
@@ -13,24 +13,19 @@ renderError(error, retry) // default: renders error in red box with retry button
 
 ```javascript
 import React from 'react'
-import {createIO} from 'url-io'
+import {combineLatest} from 'rxjs/observable/combineLatest'
 import {render} from 'react-io'
-import source from './source'
+import io from './io'
 
-// Add to the IO object on creation:
-const io = createIO(source, {
-  render: render
-})
-
-// Then use to render from source:
 function Widget() {
   return <div>
-    {io('/user').render(user => <div>{user + '!'}</div>)}
+    {io('/user')::render(user => <div>{user + '!'}</div>)}
 
-    {io({user: '/user', auth: '/auth'}).render(
-      ({user, auth}) => <div>{user + auth + '!'}</div>,
-      () => <div>Loading...</div>,
-      (error, retry) => <div onClick={retry}>Error, click to retry.</div>
+    {combineLatest(
+      io('/user'),
+      io('/auth')
+    )::render(([user, auth]) =>
+      <div>{user + auth + '!'}</div>
     )}
   </div>
 }
@@ -38,38 +33,31 @@ function Widget() {
 
 ## Passing IO through context
 
-## IOProvider
+## <IOProvider />
 Adds IO to context. Use once at the root of your app.
 
 ```javascript
 import React from 'react'
-import {createIO} from 'url-io'
-import {IOProvider, render} from 'react-io'
-import source from './source'
-
-// Add to the IO object on creation:
-const io = createIO(source, {
-  render: render
-})
+import {IOProvider} from 'react-io'
+import io from './io'
 
 export default function App() {
   return <IOProvider io={io}>
     ...
   </IOProvider>
 }
-
 ```
 
 ## withIO([urls], WrappedComponent, [renderWaiting], [renderError])
 Returns a higher-order-component (HOC) that pulls io from context and passes it to the wrapped component as a prop.
 
 ```javascript
-import {withIO} from 'react-io'
+import {withIO, render} from 'react-io'
 
 export default withIO(function User({io, id}) {
   return <div>
     <h1>User</h1>
-    {io(`/user/${id}`).render(user => <div>{user}</div>)}
+    {io(`/user/${id}`)::render(user => <div>{user}</div>)}
   </div>
 })
 ```
@@ -81,13 +69,13 @@ Internally this uses the render method described above so you can pass renderWai
 This allows for a cleaner sytax but only works with static urls (that don't depend on props or state).
 
 ```javascript
-import {withIO} from 'react-io'
+import {withIO, render} from 'react-io'
 
 export default withIO({
   auth: '/auth'
-}, function Widget({auth, io}) {
+}, function Widget({io, auth}) {
   return auth ?
-    io(`/user/${id}`).render(user => <div>{user}</div>) :
+    io(`/user/${id}`)::render(user => <div>{user}</div>) :
     <div>Not authorized</div>
 }/* , renderWaiting, renderError */)
 ```

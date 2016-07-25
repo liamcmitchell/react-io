@@ -30,26 +30,28 @@ export default class Observable extends Component {
   }
 
   subscribe(observable) {
+    const {renderValue, renderWaiting, renderError} = this.props
+    const {subscribedObservable, subscription} = this
+
     // Avoid resubscribing if we have the same observable.
-    if (this.subscribedObservable === observable) {
+    if (subscribedObservable === observable) {
       return
     }
     this.subscribedObservable = observable
 
-    // Save existing subscription so we can unsubscribe at end.
-    const oldSubscription = this.subscription
-
     // Set waiting state.
-    this.setState({vdom: this.props.renderWaiting.call()})
+    this.setState({vdom: renderWaiting()})
 
     this.subscription = observable.subscribe(value => {
-      this.setState({vdom: this.props.renderValue.call(null, value)})
+      this.setState({vdom: renderValue(value)})
     }, error => {
-      this.setState({vdom: this.props.renderError.call(null, error, this.retry.bind(this))})
+      this.setState({vdom: renderError(error, this.retry.bind(this))})
     })
 
     // Remove previous subscription.
-    oldSubscription && oldSubscription.unsubscribe()
+    if (subscription) {
+      subscription.unsubscribe()
+    }
   }
 
   retry() {
