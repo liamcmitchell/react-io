@@ -2,9 +2,11 @@ import React, {Component, PropTypes} from 'react'
 import hoistStatics from 'hoist-non-react-statics'
 import isPlainObject from 'lodash/isPlainObject'
 import isFunction from 'lodash/isFunction'
-import mapValues from 'lodash/mapValues'
+import values from 'lodash/values'
+import keys from 'lodash/keys'
+import zipObject from 'lodash/zipObject'
 import render from './render'
-import {combineLatestMap} from 'url-io'
+import {combineLatest} from 'rxjs/observable/combineLatest'
 
 function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
@@ -43,9 +45,13 @@ export default function withIO(urls, WrappedComponent, renderWaiting, renderErro
       const {io} = this.context
 
       if (urls) {
-        return combineLatestMap(mapValues(urls, url => io(url)))
-          ::render(
-            values => <WrappedComponent io={io} {...values} {...this.props} />,
+        return combineLatest(values(urls).map(url => io(url)))
+          ::render(values =>
+            <WrappedComponent
+              io={io}
+              {...zipObject(keys(urls), values)}
+              {...this.props}
+            />,
             renderWaiting,
             renderError
           )
