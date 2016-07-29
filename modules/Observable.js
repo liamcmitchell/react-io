@@ -45,6 +45,7 @@ export default class Observable extends Component {
     this.subscription = observable.subscribe(value => {
       this.setState({vdom: renderValue(value)})
     }, error => {
+      console.error(error) // eslint-disable-line
       this.setState({vdom: renderError(error, this.retry.bind(this))})
     })
 
@@ -70,7 +71,6 @@ export default class Observable extends Component {
 }
 
 export function defaultRenderError(error, retry) {
-  console.error(error) // eslint-disable-line
   return (
     <div style={{
       backgroundColor: 'red',
