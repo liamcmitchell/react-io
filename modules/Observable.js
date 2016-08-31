@@ -22,15 +22,14 @@ export default class Observable extends Component {
   }
 
   componentWillMount() {
-    this.subscribe(this.props.observable)
+    this.subscribe(this.props)
   }
 
   componentWillReceiveProps(nextProps) {
-    this.subscribe(nextProps.observable)
+    this.subscribe(nextProps)
   }
 
-  subscribe(observable) {
-    const {renderValue, renderWaiting, renderError} = this.props
+  subscribe({observable, renderValue, renderWaiting, renderError}) {
     const {subscribedObservable, subscription} = this
 
     // Avoid resubscribing if we have the same observable.
@@ -58,7 +57,7 @@ export default class Observable extends Component {
   retry() {
     this.subscription.unsubscribe()
     delete this.subscribedObservable
-    this.subscribe(this.props.observable)
+    this.subscribe(this.props)
   }
 
   componentWillUnmount() {
