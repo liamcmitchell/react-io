@@ -1,4 +1,3 @@
-export render from './render'
 export IOProvider from './IOProvider'
+export withObservables from './withObservables'
 export withIO from './withIO'
-export Observable from './Observable'

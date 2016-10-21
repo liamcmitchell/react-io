@@ -1,22 +1,7 @@
-import {Component, PropTypes} from 'react'
+import {PropTypes} from 'react'
+import withContext from 'recompose/withContext'
 
-export default class IOProvider extends Component {
-  static propTypes = {
-    children: PropTypes.element,
-    io: PropTypes.func.isRequired
-  }
-
-  static childContextTypes = {
-    io: PropTypes.func.isRequired
-  }
-
-  getChildContext() {
-    return {
-      io: this.props.io
-    }
-  }
-
-  render() {
-    return this.props.children
-  }
-}
+export default withContext(
+  {io: PropTypes.func.isRequired},
+  ({io}) => ({io})
+)(({children}) => children)
