@@ -19,10 +19,16 @@ const withIO = (urls) => {
     getContext(ioContextTypes),
     withObservables(props => {
       const {io} = props
+
+      const urlsMap = typeof urls === 'function' ?
+        urls(props) :
+        urls
+
       // Turn urls into observables if they aren't already.
-      return mapValues(
-        typeof urls === 'function' ? urls(props) : urls,
-        url => typeof url.subscribe === 'function' ? url : io(url)
+      return mapValues(urlsMap, url =>
+        typeof url.subscribe === 'function' ?
+          url :
+          io(url)
       )
     })
   )
