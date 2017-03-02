@@ -31,7 +31,10 @@ const withObservables = observables => BaseComponent => {
           // Rebuild observablesMap with latest values.
           ...zipObject(keys(observablesMap), latestValues)
         }))
-        .subscribe(props => this.setState({vdom: factory(props)}))
+        .subscribe({
+          next: this.handleNext,
+          error: this.handleError
+        })
 
       // Important that unsubscribe happens after subscribe.
       // This allows caching of observables.
@@ -39,6 +42,10 @@ const withObservables = observables => BaseComponent => {
         prevSubscription.unsubscribe()
       }
     }
+
+    handleNext = props => this.setState({vdom: factory(props)})
+
+    handleError = err => console.error(err) // eslint-disable-line
 
     componentWillReceiveProps(nextProps) {
       this.subscribe(nextProps)
