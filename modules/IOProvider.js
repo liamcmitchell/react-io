@@ -1,7 +1,7 @@
-import {PropTypes} from 'react'
 import withContext from 'recompose/withContext'
+import contextTypes from './contextTypes'
 
 export default withContext(
-  {io: PropTypes.func.isRequired},
+  contextTypes,
   ({io}) => ({io})
 )(({children}) => children)

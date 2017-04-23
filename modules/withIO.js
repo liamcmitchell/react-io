@@ -1,22 +1,20 @@
-import {PropTypes} from 'react'
 import mapValues from 'lodash/mapValues'
 import getContext from 'recompose/getContext'
 import createHelper from 'recompose/createHelper'
 import compose from 'recompose/compose'
 import withObservables from './withObservables'
-
-const ioContextTypes = {io: PropTypes.func.isRequired}
+import contextTypes from './contextTypes'
 
 // HOC to provide component with io.
 // Optionally specify static io urls to add to prop stream.
 // withIO([urls])(Component)
-const withIO = (urls) => {
+const withIO = (urls, config) => {
   if (!urls) {
-    return getContext(ioContextTypes)
+    return getContext(contextTypes)
   }
 
   return compose(
-    getContext(ioContextTypes),
+    getContext(contextTypes),
     withObservables(props => {
       const {io} = props
 
@@ -30,7 +28,7 @@ const withIO = (urls) => {
           url :
           io(url)
       )
-    })
+    }, config)
   )
 }
 

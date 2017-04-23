@@ -8,8 +8,9 @@ import zipObject from 'lodash/zipObject'
 import createHelper from 'recompose/createHelper'
 
 // Like recompose/withProps but resolves observables.
-const withObservables = observables => BaseComponent => {
-  const factory = createEagerFactory(BaseComponent)
+const withObservables = (observables, {startWith} = {}) => BaseComponent => {
+  const baseFactory = createEagerFactory(BaseComponent)
+  const startWithFactory = startWith && createEagerFactory(startWith)
 
   return class WithObservables extends Component {
     state = {vdom: null}
@@ -24,6 +25,12 @@ const withObservables = observables => BaseComponent => {
       const observablesMap = typeof observables === 'function' ?
         observables(props) :
         observables
+
+      // If startWith is provided, render first.
+      // This will be overwritten if observables resolve before next render.
+      if (startWithFactory) {
+        this.setState({vdom: startWithFactory(props)})
+      }
 
       this.subscription = combineLatest(values(observablesMap))
         ::map(latestValues => ({
@@ -43,7 +50,7 @@ const withObservables = observables => BaseComponent => {
       }
     }
 
-    handleNext = props => this.setState({vdom: factory(props)})
+    handleNext = props => this.setState({vdom: baseFactory(props)})
 
     handleError = err => console.error(err) // eslint-disable-line
 
