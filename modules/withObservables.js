@@ -8,9 +8,10 @@ import zipObject from 'lodash/zipObject'
 import createHelper from 'recompose/createHelper'
 
 // Like recompose/withProps but resolves observables.
-const withObservables = (observables, {startWith} = {}) => BaseComponent => {
+const withObservables = (observables, {startWith, error} = {}) => BaseComponent => {
   const baseFactory = createEagerFactory(BaseComponent)
   const startWithFactory = startWith && createEagerFactory(startWith)
+  const errorFactory = error && createEagerFactory(error)
 
   return class WithObservables extends Component {
     state = {vdom: null}
@@ -52,7 +53,14 @@ const withObservables = (observables, {startWith} = {}) => BaseComponent => {
 
     handleNext = props => this.setState({vdom: baseFactory(props)})
 
-    handleError = err => console.error(err) // eslint-disable-line
+    handleError = error => {
+      if (errorFactory) {
+        this.setState({vdom: errorFactory({...this.props, error})})
+      }
+      else {
+        console.error(error) // eslint-disable-line
+      }
+    }
 
     componentWillReceiveProps(nextProps) {
       this.subscribe(nextProps)
