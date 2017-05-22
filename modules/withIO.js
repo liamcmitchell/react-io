@@ -1,6 +1,5 @@
 import mapValues from 'lodash/mapValues'
 import getContext from 'recompose/getContext'
-import createHelper from 'recompose/createHelper'
 import compose from 'recompose/compose'
 import withObservables from './withObservables'
 import contextTypes from './contextTypes'
@@ -32,4 +31,4 @@ const withIO = (urls, config) => {
   )
 }
 
-export default createHelper(withIO, 'withIO')
+export default withIO

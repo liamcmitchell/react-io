@@ -5,7 +5,6 @@ import {map} from 'rxjs/operator/map'
 import values from 'lodash/values'
 import keys from 'lodash/keys'
 import zipObject from 'lodash/zipObject'
-import createHelper from 'recompose/createHelper'
 
 // Like recompose/withProps but resolves observables.
 const withObservables = (observables, {startWith, error} = {}) => BaseComponent => {
@@ -80,4 +79,4 @@ const withObservables = (observables, {startWith, error} = {}) => BaseComponent 
   }
 }
 
-export default createHelper(withObservables, 'withObservables')
+export default withObservables
