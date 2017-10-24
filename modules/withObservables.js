@@ -1,5 +1,4 @@
-import {Component} from 'react'
-import createEagerFactory from 'recompose/createEagerFactory'
+import {Component, createFactory} from 'react'
 import {combineLatest} from 'rxjs/observable/combineLatest'
 import {map} from 'rxjs/operator/map'
 import values from 'lodash/values'
@@ -8,9 +7,9 @@ import zipObject from 'lodash/zipObject'
 
 // Like recompose/withProps but resolves observables.
 const withObservables = (observables, {startWith, error} = {}) => BaseComponent => {
-  const baseFactory = createEagerFactory(BaseComponent)
-  const startWithFactory = startWith && createEagerFactory(startWith)
-  const errorFactory = error && createEagerFactory(error)
+  const baseFactory = createFactory(BaseComponent)
+  const startWithFactory = startWith && createFactory(startWith)
+  const errorFactory = error && createFactory(error)
 
   return class WithObservables extends Component {
     state = {vdom: null}
