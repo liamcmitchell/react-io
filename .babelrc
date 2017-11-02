@@ -1,6 +1,4 @@
 {
-  "presets": ["react"],
-
   "env": {
     "cjs": {
       "presets": [
