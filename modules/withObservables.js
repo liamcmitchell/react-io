@@ -1,6 +1,6 @@
 import {Component, createFactory} from 'react'
 import {combineLatest} from 'rxjs/observable/combineLatest'
-import {map} from 'rxjs/operator/map'
+import {map} from 'rxjs/operators/map'
 import values from 'lodash/values'
 import keys from 'lodash/keys'
 import zipObject from 'lodash/zipObject'
@@ -32,11 +32,11 @@ const withObservables = (observables, {startWith, error} = {}) => BaseComponent 
       }
 
       this.subscription = combineLatest(values(observablesMap))
-        ::map(latestValues => ({
+        .pipe(map(latestValues => ({
           ...props,
           // Rebuild observablesMap with latest values.
           ...zipObject(keys(observablesMap), latestValues)
-        }))
+        })))
         .subscribe({
           next: this.handleNext,
           error: this.handleError
