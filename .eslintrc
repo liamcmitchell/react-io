@@ -10,15 +10,17 @@
 	},
 	"env": {
 		"es6": true,
-		"browser": true
+		"browser": true,
+		"jest": true
 	},
 	"plugins": [
-		"react"
+		"react",
+		"jest"
 	],
 	"settings": {
 		"react": {
 			"pragma": "React",
-			"version": "15.0"
+			"version": "16.0"
 		}
 	},
 	"rules": {

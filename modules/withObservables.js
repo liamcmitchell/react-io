@@ -12,7 +12,12 @@ const withObservables = (observables, {startWith, error} = {}) => BaseComponent 
   const errorFactory = error && createFactory(error)
 
   return class WithObservables extends Component {
-    state = {vdom: null}
+    constructor() {
+      super()
+      this.state = {vdom: null}
+      this.handleNext = this.handleNext.bind(this)
+      this.handleError = this.handleError.bind(this)
+    }
 
     componentWillMount() {
       this.subscribe(this.props)
@@ -49,9 +54,11 @@ const withObservables = (observables, {startWith, error} = {}) => BaseComponent 
       }
     }
 
-    handleNext = props => this.setState({vdom: baseFactory(props)})
+    handleNext(props) {
+      this.setState({vdom: baseFactory(props)})
+    }
 
-    handleError = error => {
+    handleError(error) {
       if (errorFactory) {
         this.setState({vdom: errorFactory({...this.props, error})})
       }

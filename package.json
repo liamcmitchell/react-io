@@ -12,8 +12,11 @@
     "build": "npm run build-cjs && npm run build-es",
     "build-cjs": "rimraf lib && cross-env BABEL_ENV=cjs babel ./modules -d lib --ignore '__tests__'",
     "build-es": "rimraf es6 && cross-env BABEL_ENV=es babel ./modules -d es6 --ignore '__tests__'",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "prepare": "npm run build"
+  },
+  "jest": {
+    "setupTestFrameworkScriptFile": "./setupTest.js"
   },
   "repository": {
     "type": "git",
@@ -41,15 +44,21 @@
     "babel-cli": "^6.9.0",
     "babel-core": "^6.9.1",
     "babel-eslint": "^8.2.2",
+    "babel-jest": "^22.4.1",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-dev-expression": "^0.2.1",
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.5.0",
     "babel-preset-stage-0": "^6.5.0",
     "cross-env": "^5.1.3",
+    "enzyme": "^3.3.0",
+    "enzyme-adapter-react-16": "^1.1.1",
     "eslint": "^4.18.2",
+    "eslint-plugin-jest": "^21.12.3",
     "eslint-plugin-react": "^7.7.0",
+    "jest": "^22.4.2",
     "react": "^16.2.0",
+    "react-dom": "^16.2.0",
     "rimraf": "^2.5.2",
     "rxjs": "^5.5.6"
   }
