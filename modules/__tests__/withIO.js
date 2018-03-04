@@ -7,12 +7,8 @@ import Rx from 'rxjs'
 describe('withIO', () => {
   it('adds io value to props', () => {
     const Component = withIO({
-      val: '/path'
-    })(({val}) =>
-      <div>
-        {val}
-      </div>
-    )
+      val: '/path',
+    })(({val}) => <div>{val}</div>)
 
     const wrapper = mount(
       <IOProvider io={(request) => Rx.Observable.of(request)}>

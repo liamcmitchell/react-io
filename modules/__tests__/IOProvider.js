@@ -4,11 +4,7 @@ import getContext from 'recompose/getContext'
 import IOProvider from '../IOProvider'
 import contextTypes from '../contextTypes'
 
-const TestComponent = getContext(contextTypes)(({io}) =>
-  <div>
-    {io()}
-  </div>
-)
+const TestComponent = getContext(contextTypes)(({io}) => <div>{io()}</div>)
 
 describe('IOProvider', () => {
   it('passes io through context', () => {

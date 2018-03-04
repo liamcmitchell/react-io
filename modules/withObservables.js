@@ -6,7 +6,9 @@ import keys from 'lodash/keys'
 import zipObject from 'lodash/zipObject'
 
 // Like recompose/withProps but resolves observables.
-const withObservables = (observables, {startWith, error} = {}) => BaseComponent => {
+const withObservables = (observables, {startWith, error} = {}) => (
+  BaseComponent
+) => {
   const baseFactory = createFactory(BaseComponent)
   const startWithFactory = startWith && createFactory(startWith)
   const errorFactory = error && createFactory(error)
@@ -26,9 +28,8 @@ const withObservables = (observables, {startWith, error} = {}) => BaseComponent 
     subscribe(props) {
       const prevSubscription = this.subscription
 
-      const observablesMap = typeof observables === 'function' ?
-        observables(props) :
-        observables
+      const observablesMap =
+        typeof observables === 'function' ? observables(props) : observables
 
       // If startWith is provided, render first.
       // This will be overwritten if observables resolve before next render.
@@ -37,14 +38,16 @@ const withObservables = (observables, {startWith, error} = {}) => BaseComponent 
       }
 
       this.subscription = combineLatest(values(observablesMap))
-        .pipe(map(latestValues => ({
-          ...props,
-          // Rebuild observablesMap with latest values.
-          ...zipObject(keys(observablesMap), latestValues)
-        })))
+        .pipe(
+          map((latestValues) => ({
+            ...props,
+            // Rebuild observablesMap with latest values.
+            ...zipObject(keys(observablesMap), latestValues),
+          }))
+        )
         .subscribe({
           next: this.handleNext,
-          error: this.handleError
+          error: this.handleError,
         })
 
       // Important that unsubscribe happens after subscribe.
@@ -61,8 +64,7 @@ const withObservables = (observables, {startWith, error} = {}) => BaseComponent 
     handleError(error) {
       if (errorFactory) {
         this.setState({vdom: errorFactory({...this.props, error})})
-      }
-      else {
+      } else {
         console.error(error) // eslint-disable-line
       }
     }

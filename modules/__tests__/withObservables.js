@@ -6,12 +6,8 @@ import Rx from 'rxjs'
 describe('withObservables', () => {
   it('adds observable value to props', () => {
     const SimpleObservable = withObservables({
-      val: Rx.Observable.of('VAL')
-    })(({val}) =>
-      <div>
-        {val}
-      </div>
-    )
+      val: Rx.Observable.of('VAL'),
+    })(({val}) => <div>{val}</div>)
 
     const wrapper = mount(<SimpleObservable />)
 

@@ -14,18 +14,15 @@ const withIO = (urls, config) => {
 
   return compose(
     getContext(contextTypes),
-    withObservables(props => {
+    withObservables((props) => {
       const {io} = props
 
-      const urlsMap = typeof urls === 'function' ?
-        urls(props) :
-        urls
+      const urlsMap = typeof urls === 'function' ? urls(props) : urls
 
       // Turn urls into observables if they aren't already.
-      return mapValues(urlsMap, url =>
-        typeof url.subscribe === 'function' ?
-          url :
-          io(url)
+      return mapValues(
+        urlsMap,
+        (url) => (typeof url.subscribe === 'function' ? url : io(url))
       )
     }, config)
   )

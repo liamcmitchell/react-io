@@ -13,7 +13,23 @@
     "build-cjs": "rimraf lib && cross-env BABEL_ENV=cjs babel ./modules -d lib --ignore '__tests__'",
     "build-es": "rimraf es6 && cross-env BABEL_ENV=es babel ./modules -d es6 --ignore '__tests__'",
     "test": "jest",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "precommit": "lint-staged",
+    "prepush": "npm test"
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "git add",
+      "eslint"
+    ]
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "bracketSpacing": false,
+    "arrowParens": "always"
   },
   "jest": {
     "setupTestFrameworkScriptFile": "./setupTest.js"
@@ -55,8 +71,12 @@
     "enzyme-adapter-react-16": "^1.1.1",
     "eslint": "^4.18.2",
     "eslint-plugin-jest": "^21.12.3",
+    "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-react": "^7.7.0",
+    "husky": "^0.14.3",
     "jest": "^22.4.2",
+    "lint-staged": "^7.0.0",
+    "prettier": "1.11.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "rimraf": "^2.5.2",
