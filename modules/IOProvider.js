@@ -1,6 +1,6 @@
 import withContext from 'recompose/withContext'
-import contextTypes from './contextTypes'
+import {context} from './context'
 
-export default withContext(contextTypes, ({io}) => ({io}))(
+export const IOProvider = withContext(context, ({io}) => ({io}))(
   ({children}) => children
 )

@@ -6,7 +6,7 @@ import keys from 'lodash/keys'
 import zipObject from 'lodash/zipObject'
 
 // Like recompose/withProps but resolves observables.
-const withObservables = (observables, {startWith, error} = {}) => (
+export const withObservables = (observables, {startWith, error} = {}) => (
   BaseComponent
 ) => {
   const baseFactory = createFactory(BaseComponent)
@@ -39,11 +39,14 @@ const withObservables = (observables, {startWith, error} = {}) => (
 
       this.subscription = combineLatest(values(observablesMap))
         .pipe(
-          map((latestValues) => ({
-            ...props,
-            // Rebuild observablesMap with latest values.
-            ...zipObject(keys(observablesMap), latestValues),
-          }))
+          map((latestValues) =>
+            Object.assign(
+              {},
+              props,
+              // Rebuild observablesMap with latest values.
+              zipObject(keys(observablesMap), latestValues)
+            )
+          )
         )
         .subscribe({
           next: this.handleNext,
@@ -63,7 +66,9 @@ const withObservables = (observables, {startWith, error} = {}) => (
 
     handleError(error) {
       if (errorFactory) {
-        this.setState({vdom: errorFactory({...this.props, error})})
+        this.setState({
+          vdom: errorFactory(Object.assign({}, this.props, error)),
+        })
       } else {
         console.error(error) // eslint-disable-line
       }
@@ -86,5 +91,3 @@ const withObservables = (observables, {startWith, error} = {}) => (
     }
   }
 }
-
-export default withObservables

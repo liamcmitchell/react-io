@@ -1,21 +1,6 @@
 {
   "presets": [
-    "env",
+    ["env", {"targets": {"node": "current"}}],
     "react"
-  ],
-  "env": {
-    "cjs": {
-      "presets": [
-        ["env", { "loose": true }],
-        "stage-0"
-      ],
-      "plugins": ["add-module-exports"]
-    },
-    "es": {
-      "presets": [
-        ["env", { "loose": true, "modules": false }],
-        "stage-0"
-      ]
-    }
-  }
+  ]
 }

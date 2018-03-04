@@ -1,10 +1,10 @@
 import React from 'react'
 import {render} from 'enzyme'
 import getContext from 'recompose/getContext'
-import IOProvider from '../IOProvider'
-import contextTypes from '../contextTypes'
+import {IOProvider} from '../IOProvider'
+import {context} from '../context'
 
-const TestComponent = getContext(contextTypes)(({io}) => <div>{io()}</div>)
+const TestComponent = getContext(context)(({io}) => <div>{io()}</div>)
 
 describe('IOProvider', () => {
   it('passes io through context', () => {

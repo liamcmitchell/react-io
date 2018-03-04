@@ -1,7 +1,7 @@
 import React from 'react'
 import {mount} from 'enzyme'
-import withIO from '../withIO'
-import IOProvider from '../IOProvider'
+import {withIO} from '../withIO'
+import {IOProvider} from '../IOProvider'
 import Rx from 'rxjs'
 
 describe('withIO', () => {

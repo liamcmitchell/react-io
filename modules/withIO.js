@@ -1,19 +1,19 @@
 import mapValues from 'lodash/mapValues'
 import getContext from 'recompose/getContext'
 import compose from 'recompose/compose'
-import withObservables from './withObservables'
-import contextTypes from './contextTypes'
+import {withObservables} from './withObservables'
+import {context} from './context'
 
 // HOC to provide component with io.
 // Optionally specify static io urls to add to prop stream.
 // withIO([urls])(Component)
-const withIO = (urls, config) => {
+export const withIO = (urls, config) => {
   if (!urls) {
-    return getContext(contextTypes)
+    return getContext(context)
   }
 
   return compose(
-    getContext(contextTypes),
+    getContext(context),
     withObservables((props) => {
       const {io} = props
 
@@ -27,5 +27,3 @@ const withIO = (urls, config) => {
     }, config)
   )
 }
-
-export default withIO

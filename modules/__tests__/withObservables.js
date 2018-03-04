@@ -1,6 +1,6 @@
 import React from 'react'
 import {mount} from 'enzyme'
-import withObservables from '../withObservables'
+import {withObservables} from '../withObservables'
 import Rx from 'rxjs'
 
 describe('withObservables', () => {
