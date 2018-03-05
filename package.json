@@ -9,7 +9,7 @@
   "module": "dist/react-io.es.js",
   "scripts": {
     "build": "rimraf dist && rollup -c",
-    "dev": "onchange 'modules/**/*.js' -- rollup -c",
+    "dev": "rollup -c --watch",
     "test": "jest",
     "prepare": "npm run build",
     "precommit": "lint-staged",
@@ -70,7 +70,6 @@
     "husky": "^0.14.3",
     "jest": "^22.4.2",
     "lint-staged": "^7.0.0",
-    "onchange": "^3.3.0",
     "prettier": "1.11.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
