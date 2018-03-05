@@ -12,6 +12,7 @@ export default ['cjs', 'es', 'es2015'].map((format) => {
     plugins: [
       format !== 'es2015' &&
         babel({
+          babelrc: false,
           presets: [['es2015', {loose: true, modules: false}], 'react'],
           plugins: ['external-helpers'],
         }),
