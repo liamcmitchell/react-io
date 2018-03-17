@@ -1,6 +1,5 @@
 import {Component, createFactory} from 'react'
 import {combineLatest} from 'rxjs/observable/combineLatest'
-import {map} from 'rxjs/operators/map'
 import values from 'lodash/values'
 import keys from 'lodash/keys'
 import zipObject from 'lodash/zipObject'
@@ -28,7 +27,10 @@ export const withObservables = (observables, {startWith, error} = {}) => (
     subscribe(props) {
       const prevSubscription = this.subscription
 
-      const observablesMap =
+      // Becasue this will be called from componentWillReceiveProps
+      // we need to keep a ref to the props we are working with.
+      this._props = props
+      this._observables =
         typeof observables === 'function' ? observables(props) : observables
 
       // If startWith is provided, render first.
@@ -37,21 +39,10 @@ export const withObservables = (observables, {startWith, error} = {}) => (
         this.setState({vdom: startWithFactory(props)})
       }
 
-      this.subscription = combineLatest(values(observablesMap))
-        .pipe(
-          map((latestValues) =>
-            Object.assign(
-              {},
-              props,
-              // Rebuild observablesMap with latest values.
-              zipObject(keys(observablesMap), latestValues)
-            )
-          )
-        )
-        .subscribe({
-          next: this.handleNext,
-          error: this.handleError,
-        })
+      this.subscription = combineLatest(values(this._observables)).subscribe({
+        next: this.handleNext,
+        error: this.handleError,
+      })
 
       // Important that unsubscribe happens after subscribe.
       // This allows caching of observables.
@@ -60,8 +51,13 @@ export const withObservables = (observables, {startWith, error} = {}) => (
       }
     }
 
-    handleNext(props) {
-      this.setState({vdom: baseFactory(props)})
+    handleNext(values) {
+      const observableValues = zipObject(keys(this._observables), values)
+      const childProps = Object.assign({}, this._props, observableValues)
+
+      this.setState({
+        vdom: baseFactory(childProps),
+      })
     }
 
     handleError(error) {
