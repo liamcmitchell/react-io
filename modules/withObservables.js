@@ -67,7 +67,7 @@ export const withObservables = (observables, {startWith, error} = {}) => (
     handleError(error) {
       if (errorFactory) {
         this.setState({
-          vdom: errorFactory(Object.assign({}, this.props, error)),
+          vdom: errorFactory(Object.assign({}, this.props, {error})),
         })
       } else {
         console.error(error) // eslint-disable-line
