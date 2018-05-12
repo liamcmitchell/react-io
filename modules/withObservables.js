@@ -4,10 +4,15 @@ import values from 'lodash/values'
 import keys from 'lodash/keys'
 import zipObject from 'lodash/zipObject'
 
+const isFunction = (fn) => typeof fn === 'function'
+
 // Like recompose/withProps but resolves observables.
-export const withObservables = (observables, {startWith, error} = {}) => (
-  BaseComponent
-) => {
+export const withObservables = (
+  observables,
+  {startWith, error, isStatic} = {}
+) => (BaseComponent) => {
+  isStatic = isStatic || !isFunction(observables)
+
   const baseFactory = createFactory(BaseComponent)
   const startWithFactory = startWith && createFactory(startWith)
   const errorFactory = error && createFactory(error)
@@ -30,12 +35,15 @@ export const withObservables = (observables, {startWith, error} = {}) => (
       // Becasue this will be called from componentWillReceiveProps
       // we need to keep a ref to the props we are working with.
       this._props = props
-      this._observables =
-        typeof observables === 'function' ? observables(props) : observables
+
+      this._observables = isFunction(observables)
+        ? observables(props)
+        : observables
 
       // If startWith is provided, render first.
       // This will be overwritten if observables resolve before next render.
       if (startWithFactory) {
+        this._results = undefined
         this.setState({vdom: startWithFactory(props)})
       }
 
@@ -52,8 +60,14 @@ export const withObservables = (observables, {startWith, error} = {}) => (
     }
 
     handleNext(values) {
-      const observableValues = zipObject(keys(this._observables), values)
-      const childProps = Object.assign({}, this._props, observableValues)
+      this._results = zipObject(keys(this._observables), values)
+      this.update()
+    }
+
+    update() {
+      if (!this._results) return
+
+      const childProps = Object.assign({}, this._props, this._results)
 
       this.setState({
         vdom: baseFactory(childProps),
@@ -73,7 +87,12 @@ export const withObservables = (observables, {startWith, error} = {}) => (
     }
 
     componentWillReceiveProps(nextProps) {
-      this.subscribe(nextProps)
+      if (isStatic) {
+        this._props = nextProps
+        this.update()
+      } else {
+        this.subscribe(nextProps)
+      }
     }
 
     shouldComponentUpdate(nextProps, nextState) {

@@ -21,6 +21,33 @@ describe('withObservables', () => {
     })
   })
 
+  it('avoids resubscribing static observables', () => {
+    let subscriptions = 0
+
+    const WithObservables = withObservables({
+      val: Rx.Observable.create((observer) => {
+        subscriptions += 1
+        observer.next('VAL')
+      }),
+    })(Child)
+
+    const wrapper = mount(<WithObservables other="1" />)
+
+    expect(wrapper.find('Child').props()).toMatchObject({
+      val: 'VAL',
+      other: '1',
+    })
+
+    wrapper.setProps({other: '2'})
+
+    expect(wrapper.find('Child').props()).toMatchObject({
+      val: 'VAL',
+      other: '2',
+    })
+
+    expect(subscriptions).toBe(1)
+  })
+
   it('adds dynamic observable value to props', () => {
     const WithObservables = withObservables(({inputVal}) => ({
       val: Rx.Observable.of(inputVal),
@@ -87,6 +114,8 @@ describe('withObservables', () => {
       })(Child)
 
       const wrapper = mount(<WithObservables />)
+
+      wrapper.setProps({val: 'trigger componentWillReceiveProps'})
 
       expect(wrapper.children()).toHaveLength(0)
 

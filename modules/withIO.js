@@ -4,26 +4,27 @@ import compose from 'recompose/compose'
 import {withObservables} from './withObservables'
 import {context} from './context'
 
+const isFunction = (fn) => typeof fn === 'function'
+const isObservable = (o) => o && isFunction(o.subscribe)
+
 // HOC to provide component with io.
-// Optionally specify static io urls to add to prop stream.
-// withIO([urls])(Component)
-export const withIO = (urls, config) => {
-  if (!urls) {
-    return getContext(context)
-  }
+// Optionally specify io requests to add to prop stream.
+// withIO([requests])(Component)
+export const withIO = (requests, config) => {
+  const getIO = getContext(context)
+
+  if (!requests) return getIO
 
   return compose(
-    getContext(context),
+    getIO,
     withObservables((props) => {
       const {io} = props
 
-      const urlsMap = typeof urls === 'function' ? urls(props) : urls
-
-      // Turn urls into observables if they aren't already.
+      // Turn requests into observables if they aren't already.
       return mapValues(
-        urlsMap,
-        (url) => (typeof url.subscribe === 'function' ? url : io(url))
+        isFunction(requests) ? requests(props) : requests,
+        (request) => (isObservable(request) ? request : io(request))
       )
-    }, config)
+    }, Object.assign({isStatic: !isFunction(requests)}, config))
   )
 }
