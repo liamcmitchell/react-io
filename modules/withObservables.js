@@ -1,10 +1,7 @@
 import {Component, createFactory} from 'react'
 import {combineLatest} from 'rxjs/observable/combineLatest'
-import values from 'lodash/values'
-import keys from 'lodash/keys'
 import zipObject from 'lodash/zipObject'
-
-const isFunction = (fn) => typeof fn === 'function'
+import {isFunction} from './util'
 
 // Like recompose/withProps but resolves observables.
 export const withObservables = (
@@ -47,7 +44,9 @@ export const withObservables = (
         this.setState({vdom: startWithFactory(props)})
       }
 
-      this.subscription = combineLatest(values(this._observables)).subscribe({
+      this.subscription = combineLatest(
+        Object.values(this._observables)
+      ).subscribe({
         next: this.handleNext,
         error: this.handleError,
       })
@@ -60,7 +59,7 @@ export const withObservables = (
     }
 
     handleNext(values) {
-      this._results = zipObject(keys(this._observables), values)
+      this._results = zipObject(Object.keys(this._observables), values)
       this.update()
     }
 

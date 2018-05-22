@@ -3,9 +3,7 @@ import getContext from 'recompose/getContext'
 import compose from 'recompose/compose'
 import {withObservables} from './withObservables'
 import {context} from './context'
-
-const isFunction = (fn) => typeof fn === 'function'
-const isObservable = (o) => o && isFunction(o.subscribe)
+import {isFunction, isObservable} from './util'
 
 // HOC to provide component with io.
 // Optionally specify io requests to add to prop stream.
