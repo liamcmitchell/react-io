@@ -2,7 +2,8 @@ import React from 'react'
 import {mount} from 'enzyme'
 import {withIO} from '../withIO'
 import {context} from '../context'
-import Rx from 'rxjs'
+import {of} from 'rxjs'
+import {map} from 'rxjs/operators'
 
 describe('withIO', () => {
   it('adds io to props', () => {
@@ -22,7 +23,7 @@ describe('withIO', () => {
     })(({val}) => <div>{val}</div>)
 
     const wrapper = mount(<Component />, {
-      context: {io: (request) => Rx.Observable.of(request)},
+      context: {io: (request) => of(request)},
       childContextTypes: context,
     })
 
@@ -35,7 +36,7 @@ describe('withIO', () => {
     }))(({val}) => <div>{val}</div>)
 
     const wrapper = mount(<Component path="/dynamicPath" />, {
-      context: {io: (request) => Rx.Observable.of(request)},
+      context: {io: (request) => of(request)},
       childContextTypes: context,
     })
 
@@ -44,11 +45,11 @@ describe('withIO', () => {
 
   it('adds observable to props', () => {
     const Component = withIO(({io, path}) => ({
-      val: io(path).map((val) => val + '!'),
+      val: io(path).pipe(map((val) => val + '!')),
     }))(({val}) => <div>{val}</div>)
 
     const wrapper = mount(<Component path="/dynamicPath" />, {
-      context: {io: (request) => Rx.Observable.of(request)},
+      context: {io: (request) => of(request)},
       childContextTypes: context,
     })
 

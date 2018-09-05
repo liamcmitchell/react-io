@@ -1,6 +1,5 @@
 import mapValues from 'lodash/mapValues'
-import getContext from 'recompose/getContext'
-import compose from 'recompose/compose'
+import {compose, getContext} from 'recompose'
 import {withObservables} from './withObservables'
 import {context} from './context'
 import {isFunction, isObservable} from './util'

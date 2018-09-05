@@ -50,11 +50,9 @@
   "dependencies": {
     "lodash": "^4.17.10",
     "prop-types": "^15.6.1",
-    "recompose": "^0.26.0"
-  },
-  "peerDependencies": {
-    "react": "^0.14.0 || ^15.0.0 || ^16.0.0",
-    "rxjs": "^5.5.0"
+    "react": "^16.0.0",
+    "recompose": "^0.26.0",
+    "rxjs": "^6.3.2"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -72,15 +70,13 @@
     "eslint-plugin-react": "^7.7.0",
     "husky": "^0.14.3",
     "jest": "^22.4.2",
-    "lint-staged": "^7.1.0",
+    "lint-staged": "^7.2.2",
     "prettier": "1.11.1",
-    "react": "^16.2.0",
     "react-component-benchmark": "0.0.4",
     "react-dom": "^16.2.0",
     "rimraf": "^2.5.2",
     "rollup": "^0.56.5",
     "rollup-plugin-babel": "^3.0.4",
-    "rxjs": "^5.5.6",
     "url-io": "^4.4.1"
   }
 }

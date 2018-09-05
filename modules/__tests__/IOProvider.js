@@ -1,6 +1,6 @@
 import React from 'react'
 import {render} from 'enzyme'
-import getContext from 'recompose/getContext'
+import {getContext} from 'recompose'
 import {IOProvider} from '../IOProvider'
 import {context} from '../context'
 

@@ -1,5 +1,5 @@
 import {Component, createFactory} from 'react'
-import {combineLatest} from 'rxjs/observable/combineLatest'
+import {combineLatest} from 'rxjs'
 import zipObject from 'lodash/zipObject'
 import {isFunction} from './util'
 

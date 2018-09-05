@@ -1,14 +1,14 @@
 import React from 'react'
 import {mount} from 'enzyme'
 import {withObservables} from '../withObservables'
-import Rx from 'rxjs'
+import {Observable, of, throwError, Subject} from 'rxjs'
 
 const Child = (props) => <div>{JSON.toString(props)}</div>
 
 describe('withObservables', () => {
   it('adds static observable value to props', () => {
     const WithObservables = withObservables({
-      val: Rx.Observable.of('VAL'),
+      val: of('VAL'),
     })(Child)
 
     const wrapper = mount(
@@ -25,7 +25,7 @@ describe('withObservables', () => {
     let subscriptions = 0
 
     const WithObservables = withObservables({
-      val: Rx.Observable.create((observer) => {
+      val: Observable.create((observer) => {
         subscriptions += 1
         observer.next('VAL')
       }),
@@ -50,7 +50,7 @@ describe('withObservables', () => {
 
   it('adds dynamic observable value to props', () => {
     const WithObservables = withObservables(({inputVal}) => ({
-      val: Rx.Observable.of(inputVal),
+      val: of(inputVal),
     }))(Child)
 
     const wrapper = mount(
@@ -79,7 +79,7 @@ describe('withObservables', () => {
     const events = []
 
     const observable = (name) =>
-      new Rx.Observable(() => {
+      Observable.create(() => {
         events.push(`subscribe ${name}`)
         return () => {
           events.push(`unsubscribe ${name}`)
@@ -107,9 +107,9 @@ describe('withObservables', () => {
 
   describe('startWith missing', () => {
     it('renders null until all observables have emitted', () => {
-      const asyncVal = new Rx.Subject()
+      const asyncVal = new Subject()
       const WithObservables = withObservables({
-        val: Rx.Observable.of('VAL'),
+        val: of('VAL'),
         asyncVal,
       })(Child)
 
@@ -131,7 +131,7 @@ describe('withObservables', () => {
     it('only re-renders when all observables have emitted again', () => {
       // This behavior ensures that observable values always match the props
       // that were used to create them.
-      const asyncVal = new Rx.Subject()
+      const asyncVal = new Subject()
       const WithObservables = withObservables({
         asyncVal,
       })(Child)
@@ -165,7 +165,7 @@ describe('withObservables', () => {
     it('renders while waiting for values', () => {
       // TODO: Remove in favor of startWith operator.
       const StartWith = () => null
-      const asyncVal = new Rx.Subject()
+      const asyncVal = new Subject()
 
       const WithObservables = withObservables(
         () => ({
@@ -201,7 +201,7 @@ describe('withObservables', () => {
 
     test('throws error', () => {
       const WithObservables = withObservables({
-        val: Rx.Observable.throw(new Error('ERR')),
+        val: throwError(new Error('ERR')),
       })(Child)
 
       expect(() => {
@@ -216,7 +216,7 @@ describe('withObservables', () => {
 
       const WithObservables = withObservables(
         {
-          val: Rx.Observable.throw(new Error('ERR')),
+          val: throwError(new Error('ERR')),
         },
         {error: ErrorComponent}
       )(Child)
