@@ -1,15 +1,15 @@
 import mapValues from 'lodash/mapValues'
-import {compose, getContext} from 'recompose'
+import {compose, fromRenderProps} from 'recompose'
 import {withObservables} from './withObservables'
-import {context} from './context'
+import {Consumer} from './context'
 import {isFunction, isObservable} from './util'
+
+const getIO = fromRenderProps(Consumer, (io) => ({io}))
 
 // HOC to provide component with io.
 // Optionally specify io requests to add to prop stream.
 // withIO([requests])(Component)
 export const withIO = (requests, config) => {
-  const getIO = getContext(context)
-
   if (!requests) return getIO
 
   return compose(

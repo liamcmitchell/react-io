@@ -64,14 +64,12 @@ describe('withObservables', () => {
     })
   })
 
-  it('renders null with empty observable object', () => {
-    // Shouldn't ever pass in an empty object but test is here
-    // to make sure behavior stays consistent.
+  it('renders empty observable object', () => {
     const WithObservables = withObservables({})(Child)
 
     const wrapper = mount(<WithObservables />)
 
-    expect(wrapper.children()).toHaveLength(0)
+    expect(wrapper.find('Child').props()).toMatchObject({})
   })
 
   it('subscribes to next observables before unsubscribing from previous', () => {

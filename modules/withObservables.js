@@ -1,5 +1,5 @@
 import {Component, createFactory} from 'react'
-import {combineLatest} from 'rxjs'
+import {combineLatest, of} from 'rxjs'
 import zipObject from 'lodash/zipObject'
 import {isFunction} from './util'
 
@@ -44,9 +44,13 @@ export const withObservables = (
         this.setState({vdom: startWithFactory(props)})
       }
 
-      this.subscription = combineLatest(
-        Object.values(this._observables)
-      ).subscribe({
+      // If given an empty list, combineLatest will never resolve.
+      // Emitting an empty object is more useful.
+      const observableValues = Object.values(this._observables)
+      const combinedObservable =
+        observableValues.length === 0 ? of({}) : combineLatest(observableValues)
+
+      this.subscription = combinedObservable.subscribe({
         next: this.handleNext,
         error: this.handleError,
       })
