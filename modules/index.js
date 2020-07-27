@@ -1,3 +1,5 @@
 export {IOProvider} from './context'
-export {withObservables} from './withObservables'
-export {withIO} from './withIO'
+import {withIO} from './withIO'
+
+export {withIO}
+export const withObservables = withIO

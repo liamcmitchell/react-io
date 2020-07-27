@@ -1,4 +1,4 @@
-import babel from 'rollup-plugin-babel'
+import babel from '@rollup/plugin-babel'
 
 export default ['cjs', 'es', 'es2015'].map((format) => {
   return {
@@ -8,14 +8,27 @@ export default ['cjs', 'es', 'es2015'].map((format) => {
       format: format === 'cjs' ? 'cjs' : 'es',
     },
     // Treat absolute imports as external.
-    external: (id) => /^\w/.test(id),
+    external: (id) => /^(\w|@)/.test(id),
     plugins: [
-      format !== 'es2015' &&
-        babel({
-          babelrc: false,
-          presets: [['es2015', {loose: true, modules: false}], 'react'],
-          plugins: ['external-helpers'],
-        }),
-    ].filter(Boolean),
+      babel({
+        babelrc: false,
+        presets: [
+          [
+            '@babel/preset-env',
+            {
+              loose: true,
+              modules: false,
+              targets: format !== 'es2015' ? '> 0.25%, not dead' : {node: true},
+            },
+          ],
+          '@babel/preset-react',
+        ].filter(Boolean),
+        plugins: [
+          '@babel/plugin-transform-runtime',
+          '@babel/plugin-proposal-class-properties',
+        ],
+        babelHelpers: 'runtime',
+      }),
+    ],
   }
 })

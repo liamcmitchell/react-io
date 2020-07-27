@@ -5,22 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## unreleased
+
+### Changed
+
+- Bumped all deps
+- Removed recompose dep
+- Rename UNSAFE deprecated methods
+- Merge WithObservables into WithIO
+
 ## 5.0.0 - 2018-09-05
 
 ### Changed
 
-* Upgraded to RxJS 6.
-* Moved react, recompose & rxjs from peerDependencies to dependencies.
-* Import named recompose exports from root.
+- Upgraded to RxJS 6.
+- Moved react, recompose & rxjs from peerDependencies to dependencies.
+- Import named recompose exports from root.
 
 ## 4.5.0 - 2018-05-12
 
 ### Added
 
-* isStatic flag to avoid resubscription on update.
+- isStatic flag to avoid resubscription on update.
 
 ## 4.4.9 - 2018-05-08
 
 ### Fixed
 
-* Unhandled errors are thrown to React instead of logged.
+- Unhandled errors are thrown to React instead of logged.
