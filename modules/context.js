@@ -9,6 +9,7 @@ export function IOProvider({io, children}) {
   return <Provider value={io}>{children}</Provider>
 }
 
+// istanbul ignore else
 if (process.env.NODE_ENV !== 'production') {
   IOProvider.propTypes = {
     io: PropTypes.func.isRequired,

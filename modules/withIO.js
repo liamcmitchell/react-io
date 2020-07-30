@@ -127,6 +127,7 @@ export const withIO = (
       }
     }
 
+    // istanbul ignore else
     if (process.env.NODE_ENV !== 'production') {
       WithObservables.displayName = `withIO(${
         BaseComponent.displayName || BaseComponent.name || 'Component'

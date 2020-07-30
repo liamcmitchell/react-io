@@ -1,5 +1,9 @@
 import {useEffect, useState, useContext} from 'react'
 import {Context} from './context'
+import {take} from 'rxjs/operators'
+import {suspend} from './suspense'
+
+const WAITING = {}
 
 export const useIO = (path, params) => {
   const io = useContext(Context)
@@ -18,13 +22,35 @@ export const useIO = (path, params) => {
     )
   }
 
-  const [state, setState] = useState(undefined)
+  let [state, setState] = useState(WAITING)
+
+  if (state === WAITING) {
+    const firstValue$ = io(path, params).pipe(take(1))
+
+    let syncError
+
+    firstValue$
+      .subscribe({
+        next: (value) => {
+          state = value
+        },
+        error: (error) => {
+          syncError = error
+        },
+      })
+      .unsubscribe()
+
+    if (syncError) {
+      throw syncError
+    } else if (state === WAITING) {
+      // If we don't have a sync value, suspend until we do.
+      suspend(firstValue$.toPromise())
+    }
+  }
 
   useEffect(() => {
-    // If we have a value from a previous subscription, reset.
-    if (state !== undefined) {
-      setState(undefined)
-    }
+    // Reset state, noop if already WAITING.
+    setState(WAITING)
 
     const subscription = io(path, params).subscribe({
       next: setState,

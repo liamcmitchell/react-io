@@ -3,8 +3,19 @@ import React from 'react'
 import {mount} from 'enzyme'
 import {useIO} from '../useIO'
 import {IOProvider} from '../context'
-import {of, BehaviorSubject} from 'rxjs'
+import {of, BehaviorSubject, Subject} from 'rxjs'
 import {createIO} from 'url-io'
+import {suspend} from '../suspense'
+
+jest.mock('../suspense', () => ({
+  suspend: jest.fn((promise) => {
+    throw promise
+  }),
+}))
+
+afterEach(() => {
+  suspend.mockClear()
+})
 
 describe('useIO', () => {
   it('returns io with no args', () => {
@@ -124,6 +135,54 @@ describe('useIO', () => {
 
     afterEach(() => {
       console.error.mockRestore() // eslint-disable-line
+    })
+
+    // Testing suspense is not well supported.
+    it('suspends if value does not resolve immediately', async () => {
+      const subject = new Subject()
+      const io = createIO(() => subject)
+
+      const Component = () => {
+        const result = useIO('/path')
+
+        return <div>{JSON.stringify(result)}</div>
+      }
+
+      let caughtError
+
+      class ErrorBoundary extends React.Component {
+        state = {error: false}
+
+        static getDerivedStateFromError(error) {
+          caughtError = error
+          return {error: true}
+        }
+
+        render() {
+          return this.state.error ? null : this.props.children
+        }
+      }
+
+      mount(
+        <ErrorBoundary>
+          <Component />
+        </ErrorBoundary>,
+        {
+          wrappingComponent: IOProvider,
+          wrappingComponentProps: {io},
+        }
+      )
+
+      // Test that React reports suspense.
+      expect(caughtError).toBeDefined()
+      expect(caughtError.message).toMatch('Component suspended while rendering')
+
+      // Test that our helper suspend function was called with a promise.
+      expect(suspend).toHaveBeenCalledWith(expect.any(Promise))
+
+      // Test that the promise resolves.
+      subject.next(1)
+      await suspend.mock.calls[0][0]
     })
 
     it('throws when passing method', () => {
