@@ -22,6 +22,18 @@ export const useIO = (path, params) => {
     )
   }
 
+  // Allow rendering immediately by passing a starting value as startWith.
+  // We remove this from the params passed to io.
+  let startingValue
+  const haveStartingValue =
+    params && Object.prototype.hasOwnProperty.call(params, 'startWith')
+
+  if (haveStartingValue) {
+    const {startWith, ...other} = params
+    startingValue = startWith
+    params = other
+  }
+
   let [state, setState] = useState(WAITING)
 
   if (state === WAITING) {
@@ -42,14 +54,20 @@ export const useIO = (path, params) => {
 
     if (syncError) {
       throw syncError
-    } else if (state === WAITING) {
-      // If we don't have a sync value, suspend until we do.
-      suspend(firstValue$.toPromise())
+    }
+
+    // We don't have a sync value.
+    if (state === WAITING) {
+      if (haveStartingValue) {
+        state = startingValue
+      } else {
+        suspend(firstValue$.toPromise())
+      }
     }
   }
 
   useEffect(() => {
-    // Reset state, noop if already WAITING.
+    // Reset state, noop if identical.
     setState(WAITING)
 
     const subscription = io(path, params).subscribe({

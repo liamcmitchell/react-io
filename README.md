@@ -19,9 +19,27 @@ export default function App() {
 }
 ```
 
+## withIO([urls])(WrappedComponent)
+
+Returns a higher-order-component (HOC) that pulls io from context and passes it to the wrapped component as a prop.
+
+Pass it a map of urls or a mapper to turn props into a map of urls and it will add the resolved values to the prop stream.
+
+```javascript
+import {withIO} from 'react-io'
+
+export default withIO({
+  auth: '/auth',
+})(function Widget({io, auth}) {
+  return auth ? <div>{auth.username}</div> : <div>Not authorized</div>
+})
+```
+
 ## useIO([path, params])
 
-Used to request values from io. Returns `undefined` until the observable resolves.
+**EXPERIMENTAL!**
+
+Used to request values from io. By default, it [suspends](https://reactjs.org/docs/concurrent-mode-suspense.html) until the observable resolves.
 
 ```javascript
 import {useIO} from 'react-io'
@@ -45,18 +63,20 @@ export default function Widget() {
 }
 ```
 
-## withIO([urls])(WrappedComponent)
-
-Returns a higher-order-component (HOC) that pulls io from context and passes it to the wrapped component as a prop.
-
-Pass it a map of urls or a mapper to turn props into a map of urls and it will add the resolved values to the prop stream.
+Add `startWith` to params to provide a starting value and avoid suspense. This param is omitted from other params passed to io.
 
 ```javascript
-import {withIO} from 'react-io'
+import {useIO} from 'react-io'
 
-export default withIO({
-  auth: '/auth',
-})(function Widget({io, auth}) {
-  return auth ? <div>{auth.username}</div> : <div>Not authorized</div>
-})
+export default function Widget() {
+  const auth = useIO('/auth', {startWith: undefined})
+
+  return auth === undefined ? (
+    <div>...loading...</div>
+  ) : auth ? (
+    <div>{auth.username}</div>
+  ) : (
+    <div>Not authorized</div>
+  )
+}
 ```

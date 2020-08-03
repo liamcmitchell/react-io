@@ -6,6 +6,7 @@ import {IOProvider} from '../context'
 import {of, BehaviorSubject, Subject} from 'rxjs'
 import {createIO} from 'url-io'
 import {suspend} from '../suspense'
+import {act} from 'react-dom/test-utils'
 
 jest.mock('../suspense', () => ({
   suspend: jest.fn((promise) => {
@@ -126,6 +127,32 @@ describe('useIO', () => {
     expect(renders).toBeGreaterThanOrEqual(2)
     expect(subscriptions).toBe(2)
     expect(wrapper.text()).toBe('2')
+  })
+
+  it('renders immediately if passed a starting value as startWith', async () => {
+    const subject = new Subject()
+    const source = jest.fn(() => subject)
+    const io = createIO(source)
+
+    const Component = () => {
+      const result = useIO('/path', {startWith: 'start'})
+
+      return <div>{JSON.stringify(result)}</div>
+    }
+
+    const wrapper = mount(<Component />, {
+      wrappingComponent: IOProvider,
+      wrappingComponentProps: {io},
+    })
+
+    expect(wrapper.text()).toBe('"start"')
+    expect(source).toHaveBeenCalledWith(expect.objectContaining({params: {}}))
+
+    act(() => {
+      subject.next('next')
+    })
+
+    expect(wrapper.text()).toBe('"next"')
   })
 
   describe('errors ', () => {
