@@ -3,7 +3,7 @@ import {mount} from 'enzyme'
 import {withIO} from '../withIO'
 import {IOProvider} from '../context'
 import {Observable, of, throwError, Subject} from 'rxjs'
-import {map} from 'rxjs/operators'
+import {map, mapTo} from 'rxjs/operators'
 
 const Child = (props) => <div>{JSON.toString(props)}</div>
 
@@ -185,32 +185,34 @@ describe('withIO', () => {
     it('only re-renders when all observables have emitted again', () => {
       // This behavior ensures that observable values always match the props
       // that were used to create them.
-      const asyncVal = new Subject()
-      const WithObservables = withIO({
-        asyncVal,
-      })(Child)
+      const subject = new Subject()
+      const WithObservables = withIO(({outerProp}) => ({
+        innerProp: subject.pipe(mapTo(outerProp)),
+      }))(Child)
 
-      const wrapper = mount(<WithObservables />)
+      const wrapper = mount(<WithObservables outerProp={1} />)
 
-      asyncVal.next('ASYNC1')
+      subject.next()
       wrapper.update()
 
-      expect(wrapper.find('Child').props()).toMatchObject({
-        asyncVal: 'ASYNC1',
+      expect(wrapper.find('Child').props()).toEqual({
+        outerProp: 1,
+        innerProp: 1,
       })
 
-      wrapper.setProps({newProp: 1})
+      wrapper.setProps({outerProp: 2})
 
-      expect(wrapper.find('Child').props()).toMatchObject({
-        asyncVal: 'ASYNC1',
+      expect(wrapper.find('Child').props()).toEqual({
+        outerProp: 1,
+        innerProp: 1,
       })
 
-      asyncVal.next('ASYNC2')
+      subject.next()
       wrapper.update()
 
-      expect(wrapper.find('Child').props()).toMatchObject({
-        newProp: 1,
-        asyncVal: 'ASYNC2',
+      expect(wrapper.find('Child').props()).toEqual({
+        outerProp: 2,
+        innerProp: 2,
       })
     })
   })
