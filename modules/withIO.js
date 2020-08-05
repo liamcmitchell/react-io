@@ -20,7 +20,6 @@ export const withIO = (
       static contextType = Context
 
       state = {
-        vdom: null,
         results: null,
         error: null,
       }
@@ -28,8 +27,6 @@ export const withIO = (
       handleNext = this.handleNext.bind(this)
       handleError = this.handleError.bind(this)
       requestToObservable = this.requestToObservable.bind(this)
-
-      hasEmitted = false
 
       requestToObservable(request) {
         const io = this.context
@@ -53,13 +50,10 @@ export const withIO = (
           this.requestToObservable
         )
 
-        // If startWith is provided, reset results.
-        // This will be overwritten if observables resolve before next render.
-        if (StartComponent) {
-          this.setState({
-            results: null,
-          })
-        }
+        // Reset results.
+        this.setState({
+          results: null,
+        })
 
         // If given an empty list, combineLatest will never resolve.
         // Emitting an empty object is more useful.
@@ -69,7 +63,6 @@ export const withIO = (
             ? of({})
             : combineLatest(observableValues)
 
-        this.hasEmitted = false
         this.subscription = combinedObservable.subscribe({
           next: this.handleNext,
           error: this.handleError,
@@ -83,7 +76,6 @@ export const withIO = (
       }
 
       handleNext(values) {
-        this.hasEmitted = true
         this.setState({
           results: zipObject(Object.keys(this._observables), values),
         })
@@ -111,10 +103,10 @@ export const withIO = (
         this.subscription.unsubscribe()
       }
 
-      shouldComponentUpdate() {
-        // Only update if we have a start component or we have received a value.
+      shouldComponentUpdate(nextProps, nextState) {
+        // Only update if we have a start component or results.
         // This forces child components to wait until dynamic requests are done.
-        return Boolean(StartComponent || this.hasEmitted)
+        return Boolean(StartComponent || nextState.results)
       }
 
       render() {
