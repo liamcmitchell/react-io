@@ -8,14 +8,13 @@ import {createIO} from 'url-io'
 import {suspend} from '../suspense'
 import {act} from 'react-dom/test-utils'
 
-jest.mock('../suspense', () => ({
-  suspend: jest.fn((promise) => {
-    throw promise
-  }),
-}))
+jest.mock('../suspense')
 
-afterEach(() => {
+beforeEach(() => {
   suspend.mockClear()
+  suspend.mockImplementation((promise) => {
+    throw promise
+  })
 })
 
 describe('useIO', () => {
@@ -229,7 +228,7 @@ describe('useIO', () => {
       }).toThrowError('Params must be an object.')
     })
 
-    it('throws error from request', () => {
+    it('throws sync error from request', () => {
       const io = createIO(() => {
         throw new Error('ERR')
       })
@@ -248,7 +247,61 @@ describe('useIO', () => {
       }).toThrowError('ERR')
     })
 
-    it('throws async error that can be caught by react boundary', () => {
+    it('throws initial async error that can be caught by react boundary and avoids resubscribing', async () => {
+      suspend.mockImplementation(() => {
+        return 'SUSPENDED'
+      })
+      const errorSubject = new Subject('x')
+      let subscriptions = 0
+
+      const io = createIO(() => {
+        subscriptions++
+        return errorSubject
+      })
+
+      const Component = () => {
+        const result = useIO('/path')
+
+        return <div>{JSON.stringify(result)}</div>
+      }
+
+      class ErrorBoundary extends React.Component {
+        state = {hasError: false}
+
+        static getDerivedStateFromError() {
+          return {hasError: true}
+        }
+
+        render() {
+          if (this.state.hasError) {
+            return <div>Error</div>
+          }
+
+          return this.props.children
+        }
+      }
+
+      const wrapper = mount(
+        <ErrorBoundary>
+          <Component />
+        </ErrorBoundary>,
+        {
+          wrappingComponent: IOProvider,
+          wrappingComponentProps: {io},
+        }
+      )
+
+      expect(wrapper.text()).toMatch('SUSPENDED')
+
+      errorSubject.error(new Error('ERR'))
+      await 1
+      wrapper.update()
+
+      expect(wrapper.text()).toMatch('Error')
+      expect(subscriptions).toBe(1)
+    })
+
+    it('throws subsequent async error that can be caught by react boundary', () => {
       const errorSubject = new BehaviorSubject('x')
       const io = createIO(() => errorSubject)
 

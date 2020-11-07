@@ -22,6 +22,11 @@ export const useIO = (path, params) => {
     )
   }
 
+  const [error, setError] = useState(WAITING)
+  if (error !== WAITING) {
+    throw error
+  }
+
   // Allow rendering immediately by passing a starting value as startWith.
   // We remove this from the params passed to io.
   let startingValue
@@ -61,7 +66,7 @@ export const useIO = (path, params) => {
       if (haveStartingValue) {
         state = startingValue
       } else {
-        suspend(firstValue$.toPromise())
+        return suspend(firstValue$.toPromise().catch(setError))
       }
     }
   }
@@ -72,12 +77,7 @@ export const useIO = (path, params) => {
 
     const subscription = io(path, params).subscribe({
       next: setState,
-      error: (error) => {
-        // Throwing inside setState allows error to be caught by error boundaries.
-        setState(() => {
-          throw error
-        })
-      },
+      error: setError,
     })
 
     return () => {
