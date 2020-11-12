@@ -1,9 +1,83 @@
 import {useEffect, useState, useContext} from 'react'
 import {Context} from './context'
-import {take} from 'rxjs/operators'
 import {suspend} from './suspense'
 
-const WAITING = {}
+class CacheEntry {
+  constructor(observable, clean) {
+    this.hasValue = false
+    this.value = null
+    this.hasError = false
+    this.error = null
+    this.subscribers = 0
+    this.cleaned = false
+    this.observable = observable
+    this.clean = clean
+    this.promise = new Promise((resolve) => {
+      this.resolve = resolve
+    })
+    this.subscription = observable.subscribe({
+      next: (value) => {
+        this.hasValue = true
+        this.value = value
+        this.resolve()
+      },
+      error: (error) => {
+        this.hasError = true
+        this.error = error
+        this.resolve()
+      },
+    })
+  }
+
+  subscribe(observer) {
+    this.subscribers++
+    const subscription = this.observable.subscribe(observer)
+    return () => {
+      this.subscribers--
+      subscription.unsubscribe()
+      this.checkClean()
+    }
+  }
+
+  checkClean() {
+    if (!this.cleaned && this.subscribers <= 0) {
+      this.subscription.unsubscribe()
+      this.clean()
+    }
+  }
+}
+
+// It is possible that we end up with cache entries with errors or no subscribers.
+// We keep a reference of all caches so we can prune if needed.
+/** @type {Set<Map<string, CacheEntry>} */
+const caches = new Set()
+
+export const pruneCache = () => {
+  for (const cache of caches) {
+    for (const [, cacheEntry] of cache) {
+      cacheEntry.checkClean()
+    }
+  }
+}
+
+/** @return {CacheEntry} */
+const getCacheEntry = (cacheKey, io, path, params) => {
+  if (!io._cache) {
+    io._cache = new Map()
+    caches.add(io._cache)
+  }
+  /** @type {Map} */
+  const cache = io._cache
+
+  if (!cache.has(cacheKey)) {
+    cache.set(
+      cacheKey,
+      new CacheEntry(io(path, params), () => cache.delete(cacheKey))
+    )
+  }
+
+  return cache.get(cacheKey)
+}
 
 export const useIO = (path, params) => {
   const io = useContext(Context)
@@ -22,11 +96,6 @@ export const useIO = (path, params) => {
     )
   }
 
-  const [error, setError] = useState(WAITING)
-  if (error !== WAITING) {
-    throw error
-  }
-
   // Allow rendering immediately by passing a starting value as startWith.
   // We remove this from the params passed to io.
   let startingValue
@@ -39,51 +108,36 @@ export const useIO = (path, params) => {
     params = other
   }
 
-  let [state, setState] = useState(WAITING)
+  const cacheKey = path + (params ? JSON.stringify(params) : '')
 
-  if (state === WAITING) {
-    const firstValue$ = io(path, params).pipe(take(1))
+  const cacheEntry = getCacheEntry(cacheKey, io, path, params)
 
-    let syncError
-
-    firstValue$
-      .subscribe({
-        next: (value) => {
-          state = value
-        },
-        error: (error) => {
-          syncError = error
-        },
-      })
-      .unsubscribe()
-
-    if (syncError) {
-      throw syncError
-    }
-
-    // We don't have a sync value.
-    if (state === WAITING) {
-      if (haveStartingValue) {
-        state = startingValue
-      } else {
-        return suspend(firstValue$.toPromise().catch(setError))
-      }
-    }
+  if (cacheEntry.hasError) {
+    throw cacheEntry.error
   }
+
+  if (!cacheEntry.hasValue && !haveStartingValue) {
+    return suspend(cacheEntry.promise)
+  }
+
+  if (cacheEntry.hasValue) {
+    startingValue = cacheEntry.value
+  }
+
+  const [state, setState] = useState(startingValue)
 
   useEffect(() => {
     // Reset state, noop if identical.
-    setState(WAITING)
+    setState(startingValue)
 
-    const subscription = io(path, params).subscribe({
+    return cacheEntry.subscribe({
       next: setState,
-      error: setError,
+      // Changing state will trigger rerender and the error will be thrown
+      // from the cacheEntry object.
+      // This relies on errors being different to values...
+      error: setState,
     })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [path, params && JSON.stringify(params)])
+  }, [cacheKey])
 
   return state
 }

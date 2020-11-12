@@ -5,7 +5,7 @@ Request and mutate data using a standard interface passed through React context.
 
 ## Passing IO through context
 
-## <IOProvider />
+### <IOProvider />
 
 Adds IO to context. Use once at the root of your app.
 
@@ -19,7 +19,9 @@ export default function App() {
 }
 ```
 
-## withIO([urls])(WrappedComponent)
+## Consuming io
+
+### withIO([urls])(WrappedComponent)
 
 Returns a higher-order-component (HOC) that pulls io from context and passes it to the wrapped component as a prop.
 
@@ -35,7 +37,7 @@ export default withIO({
 })
 ```
 
-## useIO([path, params])
+### useIO([path, params])
 
 **EXPERIMENTAL!**
 
@@ -80,3 +82,5 @@ export default function Widget() {
   )
 }
 ```
+
+Hooks require that observables are subscribed to optimistically and cached outside of React state. This means there may be cached subscriptions in an orphaned or errored state. `pruneCache()` is available to clean all unused cache entries when needed.

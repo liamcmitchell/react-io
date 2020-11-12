@@ -1,9 +1,9 @@
 /* eslint-disable react/prop-types */
 import React from 'react'
 import {mount} from 'enzyme'
-import {useIO} from '../useIO'
+import {pruneCache, useIO} from '../useIO'
 import {IOProvider} from '../context'
-import {of, BehaviorSubject, Subject} from 'rxjs'
+import {of, BehaviorSubject, Subject, Observable} from 'rxjs'
 import {createIO} from 'url-io'
 import {suspend} from '../suspense'
 import {act} from 'react-dom/test-utils'
@@ -92,7 +92,7 @@ describe('useIO', () => {
 
     expect(wrapper.text()).toBe('1')
 
-    wrapper.update()
+    wrapper.setProps({})
 
     expect(renders).toBeGreaterThanOrEqual(2)
     expect(subscriptions).toBe(1)
@@ -251,7 +251,7 @@ describe('useIO', () => {
       suspend.mockImplementation(() => {
         return 'SUSPENDED'
       })
-      const errorSubject = new Subject('x')
+      const errorSubject = new Subject()
       let subscriptions = 0
 
       const io = createIO(() => {
@@ -277,25 +277,20 @@ describe('useIO', () => {
             return <div>Error</div>
           }
 
-          return this.props.children
+          return <Component />
         }
       }
 
-      const wrapper = mount(
-        <ErrorBoundary>
-          <Component />
-        </ErrorBoundary>,
-        {
-          wrappingComponent: IOProvider,
-          wrappingComponentProps: {io},
-        }
-      )
+      const wrapper = mount(<ErrorBoundary />, {
+        wrappingComponent: IOProvider,
+        wrappingComponentProps: {io},
+      })
 
       expect(wrapper.text()).toMatch('SUSPENDED')
 
       errorSubject.error(new Error('ERR'))
-      await 1
-      wrapper.update()
+
+      wrapper.setProps({})
 
       expect(wrapper.text()).toMatch('Error')
       expect(subscriptions).toBe(1)
@@ -344,5 +339,64 @@ describe('useIO', () => {
 
       expect(wrapper.text()).toMatch('Error')
     })
+  })
+})
+
+describe('pruneCache', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    console.error.mockRestore() // eslint-disable-line
+  })
+
+  test('unsubscribes lost cache entries', async () => {
+    suspend.mockImplementation(() => {
+      return 'SUSPENDED'
+    })
+    let subscriptions = 0
+
+    const io = () =>
+      new Observable(() => {
+        subscriptions++
+        return () => {
+          subscriptions--
+        }
+      })
+
+    const Component = () => {
+      useIO('/path')
+      throw new Error('Optimistic subscription is left hanging.')
+    }
+
+    class ErrorBoundary extends React.Component {
+      state = {hasError: false}
+
+      static getDerivedStateFromError() {
+        return {hasError: true}
+      }
+
+      render() {
+        if (this.state.hasError) {
+          return <div>Error</div>
+        }
+
+        return <Component />
+      }
+    }
+
+    const wrapper = mount(<ErrorBoundary />, {
+      wrappingComponent: IOProvider,
+      wrappingComponentProps: {io},
+    })
+
+    expect(wrapper.text()).toMatch('Error')
+
+    expect(subscriptions).toBe(1)
+
+    pruneCache()
+
+    expect(subscriptions).toBe(0)
   })
 })
