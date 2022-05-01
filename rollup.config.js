@@ -23,10 +23,7 @@ export default ['cjs', 'es', 'es2015'].map((format) => {
           ],
           '@babel/preset-react',
         ].filter(Boolean),
-        plugins: [
-          '@babel/plugin-transform-runtime',
-          '@babel/plugin-proposal-class-properties',
-        ],
+        plugins: ['@babel/plugin-transform-runtime'],
         babelHelpers: 'runtime',
       }),
     ],

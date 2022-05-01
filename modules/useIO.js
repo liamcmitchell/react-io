@@ -5,9 +5,9 @@ import {suspend} from './suspense'
 class CacheEntry {
   constructor(observable, clean) {
     this.hasValue = false
-    this.value = null
+    this.value = undefined
     this.hasError = false
-    this.error = null
+    this.error = undefined
     this.subscribers = 0
     this.cleaned = false
     this.observable = observable
@@ -97,14 +97,25 @@ export const useIO = (path, params) => {
   }
 
   // Allow rendering immediately by passing a starting value as startWith.
-  // We remove this from the params passed to io.
-  let startingValue
-  const haveStartingValue =
+  let startWith
+  const hasStartWith =
     params && Object.prototype.hasOwnProperty.call(params, 'startWith')
 
-  if (haveStartingValue) {
-    const {startWith, ...other} = params
-    startingValue = startWith
+  // Allow returning state wrapper - {value, loading, error}.
+  let returnStateWrapper
+  const hasReturnStateWrapper =
+    params && Object.prototype.hasOwnProperty.call(params, 'returnStateWrapper')
+
+  // Extract these options from the params passed to io.
+  if (hasStartWith || hasReturnStateWrapper) {
+    const {
+      startWith: _startWith,
+      returnStateWrapper: _returnStateWrapper,
+      ...other
+    } = params
+
+    startWith = _startWith
+    returnStateWrapper = _returnStateWrapper
     params = other
   }
 
@@ -112,23 +123,18 @@ export const useIO = (path, params) => {
 
   const cacheEntry = getCacheEntry(cacheKey, io, path, params)
 
-  if (cacheEntry.hasError) {
-    throw cacheEntry.error
-  }
-
-  if (!cacheEntry.hasValue && !haveStartingValue) {
-    return suspend(cacheEntry.promise)
-  }
-
   if (cacheEntry.hasValue) {
-    startingValue = cacheEntry.value
+    startWith = cacheEntry.value
   }
 
-  const [state, setState] = useState(startingValue)
+  // State is only needed to trigger render.
+  // Actual values are taken from cacheEntry.
+  const [, setState] = useState(startWith)
 
+  // Subscribe to changes.
   useEffect(() => {
     // Reset state, noop if identical.
-    setState(startingValue)
+    setState(startWith)
 
     return cacheEntry.subscribe({
       next: setState,
@@ -139,5 +145,21 @@ export const useIO = (path, params) => {
     })
   }, [cacheKey])
 
-  return state
+  if (returnStateWrapper) {
+    return {
+      loading: !cacheEntry.hasValue && !cacheEntry.hasError,
+      value: cacheEntry.hasValue ? cacheEntry.value : startWith,
+      error: cacheEntry.hasError ? cacheEntry.error : undefined,
+    }
+  } else {
+    if (cacheEntry.hasError) {
+      throw cacheEntry.error
+    } else if (cacheEntry.hasValue) {
+      return cacheEntry.value
+    } else if (hasStartWith) {
+      return startWith
+    } else {
+      return suspend(cacheEntry.promise)
+    }
+  }
 }
