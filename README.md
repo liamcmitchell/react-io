@@ -39,20 +39,6 @@ export default withIO({
 
 ### useIO([path, params])
 
-**EXPERIMENTAL!**
-
-Used to request values from io. By default, it [suspends](https://reactjs.org/docs/concurrent-mode-suspense.html) until the observable resolves.
-
-```javascript
-import {useIO} from 'react-io'
-
-export default function Widget() {
-  const auth = useIO('/auth')
-
-  return auth ? <div>{auth.username}</div> : <div>Not authorized</div>
-}
-```
-
 When called without any args, it returns the `io` function that can be used in callbacks.
 
 ```javascript
@@ -62,6 +48,18 @@ export default function Widget() {
   const io = useIO()
 
   return <button onClick={() => io('/path', 'SAVE', {value: 'x'})}>Save</button>
+}
+```
+
+When called with path and params, it will subscribe to and return values from io. By default, it [suspends](https://reactjs.org/docs/concurrent-mode-suspense.html) until the observable resolves. **Note that suspense does not officially support this use case.** Errors will be thrown to React and should be caught using [error boundaries](https://reactjs.org/docs/error-boundaries.html).
+
+```javascript
+import {useIO} from 'react-io'
+
+export default function Widget() {
+  const auth = useIO('/auth')
+
+  return auth ? <div>{auth.username}</div> : <div>Not authorized</div>
 }
 ```
 
@@ -77,6 +75,26 @@ export default function Widget() {
     <div>...loading...</div>
   ) : auth ? (
     <div>{auth.username}</div>
+  ) : (
+    <div>Not authorized</div>
+  )
+}
+```
+
+Add `returnStateWrapper: true` to params to return a state wrapper containing `{loading, value, error}`, avoiding suspense and throwing errors. This param is omitted from other params passed to io.
+
+```javascript
+import {useIO} from 'react-io'
+
+export default function Widget() {
+  const auth = useIO('/auth', {returnStateWrapper: true})
+
+  return auth.loading ? (
+    <div>...loading...</div>
+  ) : auth.error ? (
+    <div>Error: {error.toString()}</div>
+  ) : auth.value ? (
+    <div>{auth.value.username}</div>
   ) : (
     <div>Not authorized</div>
   )

@@ -154,6 +154,56 @@ describe('useIO', () => {
     expect(wrapper.text()).toBe('"next"')
   })
 
+  it('returns state wrapper', async () => {
+    const subject = new Subject()
+    const source = jest.fn(() => subject)
+    const io = createIO(source)
+
+    const Result = () => null
+
+    const Component = () => {
+      const result = useIO('/path', {returnStateWrapper: true})
+
+      return <Result result={result} />
+    }
+
+    const wrapper = mount(<Component />, {
+      wrappingComponent: IOProvider,
+      wrappingComponentProps: {io},
+    })
+
+    expect(wrapper.find(Result).prop('result')).toEqual({
+      loading: true,
+      value: undefined,
+      error: undefined,
+    })
+
+    expect(source).toHaveBeenCalledWith(expect.objectContaining({params: {}}))
+
+    act(() => {
+      subject.next('next')
+    })
+    wrapper.update()
+
+    expect(wrapper.find(Result).prop('result')).toEqual({
+      loading: false,
+      value: 'next',
+      error: undefined,
+    })
+
+    const error = new Error('ERR')
+    act(() => {
+      subject.error(error)
+    })
+    wrapper.update()
+
+    expect(wrapper.find(Result).prop('result')).toEqual({
+      loading: false,
+      value: 'next', // will hold last received value
+      error: error,
+    })
+  })
+
   describe('errors ', () => {
     beforeEach(() => {
       jest.spyOn(console, 'error').mockImplementation(() => {})
