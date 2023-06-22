@@ -136,14 +136,15 @@ export const useIO = (path, params) => {
     // Reset state, noop if identical.
     setState(startWith)
 
-    return cacheEntry.subscribe({
+    // cacheEntry used in render may have been removed. Need to get again.
+    return getCacheEntry(cacheKey, io, path, params).subscribe({
       next: setState,
       // Changing state will trigger rerender and the error will be thrown
       // from the cacheEntry object.
       // This relies on errors being different to values...
       error: setState,
     })
-  }, [cacheKey])
+  }, [cacheKey, io])
 
   if (returnStateWrapper) {
     return {
