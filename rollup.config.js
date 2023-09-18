@@ -2,10 +2,16 @@ import babel from '@rollup/plugin-babel'
 
 export default {
   input: './modules/index.js',
-  output: ['cjs', 'es'].map((format) => ({
-    file: `dist/react-io.${format}.js`,
-    format,
-  })),
+  output: [
+    {
+      file: `dist/react-io.mjs`,
+      format: 'es',
+    },
+    {
+      file: `dist/react-io.cjs`,
+      format: 'cjs',
+    },
+  ],
   // Treat absolute imports as external.
   external: (id) => /^(\w|@)/.test(id),
   plugins: [

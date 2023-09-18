@@ -5,15 +5,13 @@
   "files": [
     "dist"
   ],
-  "type": "commonjs",
   "exports": {
     ".": {
-      "import": "./dist/react-io.es.js",
-      "require": "./dist/react-io.cjs.js"
+      "import": "./dist/react-io.mjs",
+      "require": "./dist/react-io.cjs"
     }
   },
-  "main": "./dist/react-io.cjs.js",
-  "module": "./dist/react-io.es.js",
+  "main": "./dist/react-io.cjs",
   "side-effects": false,
   "scripts": {
     "build": "rimraf dist && rollup -c",
