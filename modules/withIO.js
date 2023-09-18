@@ -1,9 +1,6 @@
 import React, {Component} from 'react'
-import mapValues from 'lodash/mapValues'
-import zipObject from 'lodash/zipObject'
 import {Context} from './context'
 import {isFunction, isObservable} from './util'
-import {combineLatest, of} from 'rxjs'
 
 // HOC to provide component with io.
 // Optionally specify io requests to add to prop stream.
@@ -24,64 +21,72 @@ export const withIO = (
         error: null,
       }
 
-      handleNext = this.handleNext.bind(this)
-      handleError = this.handleError.bind(this)
-      requestToObservable = this.requestToObservable.bind(this)
-
-      requestToObservable(request) {
-        const io = this.context
-        return isObservable(request) ? request : io(request)
-      }
-
       UNSAFE_componentWillMount() {
         this.subscribe(this.props)
       }
 
       subscribe(props) {
-        const prevSubscription = this.subscription
+        // istanbul ignore next
+        if (this.state.error) return
+
         const io = this.context
 
-        // Becasue this will be called from componentWillReceiveProps
-        // we need to keep a ref to the props we are working with.
-        this._props = props
-
-        this._observables = mapValues(
-          isFunction(requests) ? requests({...props, io}) : requests,
-          this.requestToObservable
+        const requestEntries = Object.entries(
+          isStatic ? requests : requests({...props, io})
         )
 
-        // Reset results.
+        // Reset results state.
+        // If we have no requests, we must resolve empty object.
+        // Otherwise we wait until all requests are resolved.
         this.setState({
-          results: null,
+          results: requestEntries.length === 0 ? {} : null,
         })
 
-        // If given an empty list, combineLatest will never resolve.
-        // Emitting an empty object is more useful.
-        const observableValues = Object.values(this._observables)
-        const combinedObservable =
-          observableValues.length === 0
-            ? of({})
-            : combineLatest(observableValues)
+        const prevRequests = this.requests || {}
+        this.requests = Object.fromEntries(requestEntries)
+        const prevSubscriptions = this.subscriptions || {}
+        this.subscriptions = {}
+        const prevResults = this.results || {}
+        this.results = {}
 
-        this.subscription = combinedObservable.subscribe({
-          next: this.handleNext,
-          error: this.handleError,
-        })
+        for (const [prop, request] of requestEntries) {
+          // Reuse previous subscription and result if possible.
+          if (prevRequests[prop] === request && prevSubscriptions[prop]) {
+            this.subscriptions[prop] = prevSubscriptions[prop]
+            if (Object.prototype.hasOwnProperty.call(prevResults, prop)) {
+              this.results[prop] = prevResults[prop]
+            }
+            delete prevSubscriptions[prop]
+          } else {
+            const observable = isObservable(request) ? request : io(request)
+
+            this.subscriptions[prop] = observable.subscribe({
+              next: (value) => {
+                this.results[prop] = value
+
+                if (
+                  Object.values(this.results).length ===
+                  Object.values(this.requests).length
+                ) {
+                  this.setState({
+                    results: this.results,
+                  })
+                }
+              },
+              error: this.handleError,
+            })
+          }
+        }
 
         // Important that unsubscribe happens after subscribe.
         // This allows caching of observables.
-        if (prevSubscription) {
-          prevSubscription.unsubscribe()
-        }
+        this.unsubscribe(prevSubscriptions)
       }
 
-      handleNext(values) {
-        this.setState({
-          results: zipObject(Object.keys(this._observables), values),
-        })
-      }
+      handleError = (error) => {
+        // Only deal with the first error.
+        if (this.state.error) return
 
-      handleError(error) {
         if (ErrorComponent) {
           this.setState({
             error,
@@ -90,6 +95,15 @@ export const withIO = (
           this.setState(null, () => {
             throw error
           })
+        }
+
+        this.unsubscribe(this.subscriptions)
+      }
+
+      unsubscribe(subscriptions) {
+        for (const prop in subscriptions) {
+          subscriptions[prop].unsubscribe()
+          delete subscriptions[prop]
         }
       }
 
@@ -100,7 +114,7 @@ export const withIO = (
       }
 
       componentWillUnmount() {
-        this.subscription.unsubscribe()
+        this.unsubscribe(this.subscriptions)
       }
 
       shouldComponentUpdate(nextProps, nextState) {
@@ -131,9 +145,9 @@ export const withIO = (
 
     // istanbul ignore else
     if (process.env.NODE_ENV !== 'production') {
-      WithObservables.displayName = `withIO(${
+      const baseName =
         BaseComponent.displayName || BaseComponent.name || 'Component'
-      })`
+      WithObservables.displayName = `withIO(${baseName})`
     }
 
     return WithObservables

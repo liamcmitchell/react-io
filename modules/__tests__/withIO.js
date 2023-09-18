@@ -81,7 +81,7 @@ describe('withIO', () => {
     let subscriptions = 0
 
     const WithObservables = withIO({
-      val: Observable.create((observer) => {
+      val: new Observable((observer) => {
         subscriptions += 1
         observer.next('VAL')
       }),
