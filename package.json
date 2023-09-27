@@ -46,11 +46,11 @@
     "url": "https://github.com/liamcmitchell/react-io/issues"
   },
   "homepage": "https://github.com/liamcmitchell/react-io#readme",
-  "dependencies": {
+  "peerDependencies": {
     "lodash": "^4.17.20",
     "prop-types": "^15.7.2",
     "react": "^16.14.0",
-    "rxjs": "^6.6.3"
+    "rxjs": "^6.0.0 || ^7.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.3",
