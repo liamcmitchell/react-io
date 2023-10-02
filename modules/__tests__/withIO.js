@@ -1,23 +1,23 @@
 import React from 'react'
-import {mount} from 'enzyme'
+import {act, render} from '@testing-library/react'
 import {withIO} from '../withIO'
 import {IOProvider} from '../context'
 import {Observable, of, throwError, Subject} from 'rxjs'
 import {map, mapTo} from 'rxjs/operators'
 
-const Child = (props) => <div>{JSON.toString(props)}</div>
+const Child = (props) => <div>{JSON.stringify(props)}</div>
 
 describe('withIO', () => {
   it('adds io to props', () => {
     const Component = withIO()(({io}) => <div>{io()}</div>)
 
-    const wrapper = mount(
+    render(
       <IOProvider io={() => 'io!'}>
         <Component />
       </IOProvider>
     )
 
-    expect(wrapper.text()).toBe('io!')
+    expect(document.body.textContent).toBe('io!')
   })
 
   it('adds static io request to props', () => {
@@ -25,13 +25,13 @@ describe('withIO', () => {
       val: '/path',
     })(({val}) => <div>{val}</div>)
 
-    const wrapper = mount(
+    render(
       <IOProvider io={(request) => of(request)}>
         <Component />
       </IOProvider>
     )
 
-    expect(wrapper.text()).toBe('/path')
+    expect(document.body.textContent).toBe('/path')
   })
 
   it('adds dynamic io request to props', () => {
@@ -39,13 +39,13 @@ describe('withIO', () => {
       val: path,
     }))(({val}) => <div>{val}</div>)
 
-    const wrapper = mount(
+    render(
       <IOProvider io={(request) => of(request)}>
         <Component path="/dynamicPath" />
       </IOProvider>
     )
 
-    expect(wrapper.text()).toBe('/dynamicPath')
+    expect(document.body.textContent).toBe('/dynamicPath')
   })
 
   it('adds observable to props', () => {
@@ -53,13 +53,13 @@ describe('withIO', () => {
       val: io(path).pipe(map((val) => val + '!')),
     }))(({val}) => <div>{val}</div>)
 
-    const wrapper = mount(
+    render(
       <IOProvider io={(request) => of(request)}>
         <Component path="/dynamicPath" />
       </IOProvider>
     )
 
-    expect(wrapper.text()).toBe('/dynamicPath!')
+    expect(document.body.textContent).toBe('/dynamicPath!')
   })
 
   it('adds static observable value to props', () => {
@@ -67,11 +67,9 @@ describe('withIO', () => {
       val: of('VAL'),
     })(Child)
 
-    const wrapper = mount(
-      <WithObservables val="will be overridden" otherProp />
-    )
+    render(<WithObservables val="will be overridden" otherProp />)
 
-    expect(wrapper.find('Child').props()).toMatchObject({
+    expect(JSON.parse(document.body.textContent)).toMatchObject({
       val: 'VAL',
       otherProp: true,
     })
@@ -87,16 +85,16 @@ describe('withIO', () => {
       }),
     })(Child)
 
-    const wrapper = mount(<WithObservables other="1" />)
+    const {rerender} = render(<WithObservables other="1" />)
 
-    expect(wrapper.find('Child').props()).toMatchObject({
+    expect(JSON.parse(document.body.textContent)).toMatchObject({
       val: 'VAL',
       other: '1',
     })
 
-    wrapper.setProps({other: '2'})
+    rerender(<WithObservables other="2" />)
 
-    expect(wrapper.find('Child').props()).toMatchObject({
+    expect(JSON.parse(document.body.textContent)).toMatchObject({
       val: 'VAL',
       other: '2',
     })
@@ -109,11 +107,11 @@ describe('withIO', () => {
       val: of(inputVal),
     }))(Child)
 
-    const wrapper = mount(
+    render(
       <WithObservables inputVal="VAL" val="will be overridden" otherProp />
     )
 
-    expect(wrapper.find('Child').props()).toMatchObject({
+    expect(JSON.parse(document.body.textContent)).toMatchObject({
       inputVal: 'VAL',
       val: 'VAL',
       otherProp: true,
@@ -123,9 +121,9 @@ describe('withIO', () => {
   it('renders empty observable object', () => {
     const WithObservables = withIO({})(Child)
 
-    const wrapper = mount(<WithObservables />)
+    render(<WithObservables />)
 
-    expect(wrapper.find('Child').props()).toMatchObject({})
+    expect(JSON.parse(document.body.textContent)).toMatchObject({})
   })
 
   it('subscribes to next observables before unsubscribing from previous', () => {
@@ -133,7 +131,7 @@ describe('withIO', () => {
     const events = []
 
     const observable = (name) =>
-      Observable.create(() => {
+      new Observable(() => {
         events.push(`subscribe ${name}`)
         return () => {
           events.push(`unsubscribe ${name}`)
@@ -144,10 +142,10 @@ describe('withIO', () => {
       val: observable(name),
     }))(Child)
 
-    const wrapper = mount(<WithObservables name="1" />)
-    wrapper.setProps({name: 2})
-    wrapper.setProps({name: 3})
-    wrapper.unmount()
+    const {rerender, unmount} = render(<WithObservables name="1" />)
+    rerender(<WithObservables name="2" />)
+    rerender(<WithObservables name="3" />)
+    unmount()
 
     expect(events).toMatchObject([
       'subscribe 1',
@@ -167,16 +165,17 @@ describe('withIO', () => {
         asyncVal,
       })(Child)
 
-      const wrapper = mount(<WithObservables />)
+      const {rerender} = render(<WithObservables />)
 
-      wrapper.setProps({val: 'trigger componentWillReceiveProps'})
+      rerender(<WithObservables val="try again" />)
 
-      expect(wrapper.html()).toBe(null)
+      expect(document.body.textContent).toBe('')
 
-      asyncVal.next('ASYNC')
-      wrapper.update()
+      act(() => {
+        asyncVal.next('ASYNC')
+      })
 
-      expect(wrapper.find('Child').props()).toMatchObject({
+      expect(JSON.parse(document.body.textContent)).toMatchObject({
         val: 'VAL',
         asyncVal: 'ASYNC',
       })
@@ -190,27 +189,29 @@ describe('withIO', () => {
         innerProp: subject.pipe(mapTo(outerProp)),
       }))(Child)
 
-      const wrapper = mount(<WithObservables outerProp={1} />)
+      const {rerender} = render(<WithObservables outerProp={1} />)
 
-      subject.next()
-      wrapper.update()
+      act(() => {
+        subject.next()
+      })
 
-      expect(wrapper.find('Child').props()).toEqual({
+      expect(JSON.parse(document.body.textContent)).toEqual({
         outerProp: 1,
         innerProp: 1,
       })
 
-      wrapper.setProps({outerProp: 2})
+      rerender(<WithObservables outerProp={2} />)
 
-      expect(wrapper.find('Child').props()).toEqual({
+      expect(JSON.parse(document.body.textContent)).toEqual({
         outerProp: 1,
         innerProp: 1,
       })
 
-      subject.next()
-      wrapper.update()
+      act(() => {
+        subject.next()
+      })
 
-      expect(wrapper.find('Child').props()).toEqual({
+      expect(JSON.parse(document.body.textContent)).toEqual({
         outerProp: 2,
         innerProp: 2,
       })
@@ -218,31 +219,66 @@ describe('withIO', () => {
   })
 
   describe('startWith provided', () => {
-    it('renders while waiting for values', () => {
-      // TODO: Remove in favor of startWith operator.
-      const StartWith = () => null
+    it('renders StartWith until all observables have emitted', () => {
+      const StartWith = () => 'StartWith'
       const asyncVal = new Subject()
-
       const WithObservables = withIO(
-        () => ({
+        {
+          val: of('VAL'),
           asyncVal,
+        },
+        {startWith: StartWith}
+      )(Child)
+
+      const {rerender} = render(<WithObservables />)
+
+      rerender(<WithObservables val="try again" />)
+
+      expect(document.body.textContent).toBe('StartWith')
+
+      act(() => {
+        asyncVal.next('ASYNC')
+      })
+
+      expect(JSON.parse(document.body.textContent)).toMatchObject({
+        val: 'VAL',
+        asyncVal: 'ASYNC',
+      })
+    })
+
+    it('renders StartWith while waiting for new observables', () => {
+      const StartWith = () => 'StartWith'
+      const subject = new Subject()
+      const WithObservables = withIO(
+        ({outerProp}) => ({
+          innerProp: subject.pipe(mapTo(outerProp)),
         }),
         {startWith: StartWith}
       )(Child)
 
-      const wrapper = mount(<WithObservables />)
+      const {rerender} = render(<WithObservables outerProp={1} />)
 
-      expect(wrapper.find('StartWith')).toHaveLength(1)
-      expect(wrapper.find('Child')).toHaveLength(0)
+      act(() => {
+        subject.next()
+      })
 
-      asyncVal.next(1)
-      wrapper.update()
-      expect(wrapper.find('StartWith')).toHaveLength(0)
-      expect(wrapper.find('Child')).toHaveLength(1)
+      expect(JSON.parse(document.body.textContent)).toEqual({
+        outerProp: 1,
+        innerProp: 1,
+      })
 
-      wrapper.setProps({})
-      expect(wrapper.find('StartWith')).toHaveLength(1)
-      expect(wrapper.find('Child')).toHaveLength(0)
+      rerender(<WithObservables outerProp={2} />)
+
+      expect(document.body.textContent).toBe('StartWith')
+
+      act(() => {
+        subject.next()
+      })
+
+      expect(JSON.parse(document.body.textContent)).toEqual({
+        outerProp: 2,
+        innerProp: 2,
+      })
     })
   })
 
@@ -261,14 +297,14 @@ describe('withIO', () => {
       })(Child)
 
       expect(() => {
-        mount(<WithObservables />)
+        render(<WithObservables />)
       }).toThrow(/ERR/)
     })
   })
 
   describe('error provided', () => {
     it('renders when observable throws', () => {
-      const ErrorComponent = () => null
+      const ErrorComponent = ({error}) => error.message
 
       const WithObservables = withIO(
         {
@@ -277,12 +313,9 @@ describe('withIO', () => {
         {error: ErrorComponent}
       )(Child)
 
-      const wrapper = mount(<WithObservables />)
+      render(<WithObservables />)
 
-      expect(wrapper.find('ErrorComponent').props()).toMatchObject({
-        error: expect.objectContaining({message: 'ERR'}),
-      })
-      expect(wrapper.find('Child')).toHaveLength(0)
+      expect(document.body.textContent).toBe('ERR')
     })
   })
 })

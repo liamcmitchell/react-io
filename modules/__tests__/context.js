@@ -1,17 +1,15 @@
 import React from 'react'
 import {IOProvider, Consumer} from '../context'
-import {mount} from 'enzyme'
+import {render} from '@testing-library/react'
 
 describe('IOProvider', () => {
   it('passes io through context', () => {
-    const wrapper = mount(
+    render(
       <IOProvider io={() => 'VAL'}>
         <Consumer>{(io) => <div>{io()}</div>}</Consumer>
       </IOProvider>
     )
 
-    wrapper.update()
-
-    expect(wrapper.text()).toMatch('VAL')
+    expect(document.body.textContent).toBe('VAL')
   })
 })

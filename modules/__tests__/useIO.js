@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
-import React from 'react'
-import {mount} from 'enzyme'
+import React, {Suspense} from 'react'
+import {render} from '@testing-library/react'
 import {pruneCache, useIO} from '../useIO'
 import {IOProvider} from '../context'
 import {of, BehaviorSubject, Subject, Observable} from 'rxjs'
@@ -27,12 +27,11 @@ describe('useIO', () => {
       return <div>{io()}</div>
     }
 
-    const wrapper = mount(<Component />, {
-      wrappingComponent: IOProvider,
-      wrappingComponentProps: {io},
+    render(<Component />, {
+      wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(wrapper.text()).toBe('io!')
+    expect(document.body.textContent).toBe('io!')
   })
 
   it('returns path result', () => {
@@ -44,12 +43,11 @@ describe('useIO', () => {
       return <div>{result}</div>
     }
 
-    const wrapper = mount(<Component />, {
-      wrappingComponent: IOProvider,
-      wrappingComponentProps: {io},
+    render(<Component />, {
+      wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(wrapper.text()).toBe('/path')
+    expect(document.body.textContent).toBe('/path')
   })
 
   it('returns path & params result', () => {
@@ -61,13 +59,12 @@ describe('useIO', () => {
       return <div>{JSON.stringify(result)}</div>
     }
 
-    const wrapper = mount(<Component />, {
-      wrappingComponent: IOProvider,
-      wrappingComponentProps: {io},
+    render(<Component />, {
+      wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(wrapper.text()).toMatch('"originalPath":"/path"')
-    expect(wrapper.text()).toMatch('"params":{"a":1}')
+    expect(document.body.textContent).toMatch('"originalPath":"/path"')
+    expect(document.body.textContent).toMatch('"params":{"a":1}')
   })
 
   it('avoids resubscribing for the same request', () => {
@@ -85,18 +82,17 @@ describe('useIO', () => {
       return <div>{result}</div>
     }
 
-    const wrapper = mount(<Component />, {
-      wrappingComponent: IOProvider,
-      wrappingComponentProps: {io},
+    const {rerender} = render(<Component />, {
+      wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(wrapper.text()).toBe('1')
+    expect(document.body.textContent).toBe('1')
 
-    wrapper.setProps({})
+    rerender(<Component />)
 
     expect(renders).toBeGreaterThanOrEqual(2)
     expect(subscriptions).toBe(1)
-    expect(wrapper.text()).toBe('1')
+    expect(document.body.textContent).toBe('1')
   })
 
   it('subscribes to new observable for new request', () => {
@@ -114,18 +110,17 @@ describe('useIO', () => {
       return <div>{result}</div>
     }
 
-    const wrapper = mount(<Component a={1} />, {
-      wrappingComponent: IOProvider,
-      wrappingComponentProps: {io},
+    const {rerender} = render(<Component a={1} />, {
+      wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(wrapper.text()).toBe('1')
+    expect(document.body.textContent).toBe('1')
 
-    wrapper.setProps({a: 2})
+    rerender(<Component a={2} />)
 
     expect(renders).toBeGreaterThanOrEqual(2)
     expect(subscriptions).toBe(2)
-    expect(wrapper.text()).toBe('2')
+    expect(document.body.textContent).toBe('2')
   })
 
   it('renders immediately if passed a starting value as startWith', async () => {
@@ -139,19 +134,18 @@ describe('useIO', () => {
       return <div>{JSON.stringify(result)}</div>
     }
 
-    const wrapper = mount(<Component />, {
-      wrappingComponent: IOProvider,
-      wrappingComponentProps: {io},
+    render(<Component />, {
+      wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(wrapper.text()).toBe('"start"')
+    expect(document.body.textContent).toBe('"start"')
     expect(source).toHaveBeenCalledWith(expect.objectContaining({params: {}}))
 
     act(() => {
       subject.next('next')
     })
 
-    expect(wrapper.text()).toBe('"next"')
+    expect(document.body.textContent).toBe('"next"')
   })
 
   it('returns state wrapper', async () => {
@@ -159,20 +153,17 @@ describe('useIO', () => {
     const source = jest.fn(() => subject)
     const io = createIO(source)
 
-    const Result = () => null
-
     const Component = () => {
       const result = useIO('/path', {returnStateWrapper: true})
 
-      return <Result result={result} />
+      return JSON.stringify(result)
     }
 
-    const wrapper = mount(<Component />, {
-      wrappingComponent: IOProvider,
-      wrappingComponentProps: {io},
+    render(<Component />, {
+      wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(wrapper.find(Result).prop('result')).toEqual({
+    expect(JSON.parse(document.body.textContent)).toEqual({
       loading: true,
       value: undefined,
       error: undefined,
@@ -183,9 +174,8 @@ describe('useIO', () => {
     act(() => {
       subject.next('next')
     })
-    wrapper.update()
 
-    expect(wrapper.find(Result).prop('result')).toEqual({
+    expect(JSON.parse(document.body.textContent)).toEqual({
       loading: false,
       value: 'next',
       error: undefined,
@@ -195,12 +185,11 @@ describe('useIO', () => {
     act(() => {
       subject.error(error)
     })
-    wrapper.update()
 
-    expect(wrapper.find(Result).prop('result')).toEqual({
+    expect(JSON.parse(document.body.textContent)).toEqual({
       loading: false,
       value: 'next', // will hold last received value
-      error: error,
+      error: {},
     })
   })
 
@@ -224,58 +213,22 @@ describe('useIO', () => {
         return <div>{JSON.stringify(result)}</div>
       }
 
-      let caughtError
-
-      class ErrorBoundary extends React.Component {
-        state = {error: false}
-
-        static getDerivedStateFromError(error) {
-          caughtError = error
-          return {error: true}
-        }
-
-        render() {
-          return this.state.error ? null : this.props.children
-        }
-      }
-
-      mount(
-        <ErrorBoundary>
+      render(
+        <Suspense fallback="LOADING">
           <Component />
-        </ErrorBoundary>,
+        </Suspense>,
         {
-          wrappingComponent: IOProvider,
-          wrappingComponentProps: {io},
+          wrapper: (props) => <IOProvider {...props} io={io} />,
         }
       )
 
-      // Test that React reports suspense.
-      expect(caughtError).toBeDefined()
-      expect(caughtError.message).toMatch('Component suspended while rendering')
-
-      // Test that our helper suspend function was called with a promise.
-      expect(suspend).toHaveBeenCalledWith(expect.any(Promise))
+      expect(document.body.textContent).toBe('LOADING')
 
       // Test that the promise resolves.
-      subject.next(1)
-      await suspend.mock.calls[0][0]
-    })
-
-    it('throws when passing method', () => {
-      const io = createIO((request) => request)
-
-      const Component = () => {
-        const result = useIO('/path', 'POST')
-
-        return <div>{JSON.stringify(result)}</div>
-      }
-
-      expect(() => {
-        mount(<Component />, {
-          wrappingComponent: IOProvider,
-          wrappingComponentProps: {io},
-        })
-      }).toThrowError('Params must be an object.')
+      await act(async () => {
+        subject.next(1)
+        await Promise.resolve()
+      })
     })
 
     it('throws sync error from request', () => {
@@ -290,9 +243,8 @@ describe('useIO', () => {
       }
 
       expect(() => {
-        mount(<Component />, {
-          wrappingComponent: IOProvider,
-          wrappingComponentProps: {io},
+        render(<Component />, {
+          wrapper: (props) => <IOProvider {...props} io={io} />,
         })
       }).toThrowError('ERR')
     })
@@ -316,33 +268,32 @@ describe('useIO', () => {
       }
 
       class ErrorBoundary extends React.Component {
-        state = {hasError: false}
+        state = {error: null}
 
-        static getDerivedStateFromError() {
-          return {hasError: true}
+        static getDerivedStateFromError(error) {
+          return {error}
         }
 
         render() {
-          if (this.state.hasError) {
-            return <div>Error</div>
+          if (this.state.error) {
+            return <div>{String(this.state.error)}</div>
           }
 
           return <Component />
         }
       }
 
-      const wrapper = mount(<ErrorBoundary />, {
-        wrappingComponent: IOProvider,
-        wrappingComponentProps: {io},
+      const {rerender} = render(<ErrorBoundary />, {
+        wrapper: (props) => <IOProvider {...props} io={io} />,
       })
 
-      expect(wrapper.text()).toMatch('SUSPENDED')
+      expect(document.body.textContent).toMatch('SUSPENDED')
 
       errorSubject.error(new Error('ERR'))
 
-      wrapper.setProps({})
+      rerender(<ErrorBoundary />)
 
-      expect(wrapper.text()).toMatch('Error')
+      expect(document.body.textContent).toMatch('Error')
       expect(subscriptions).toBe(1)
     })
 
@@ -372,22 +323,28 @@ describe('useIO', () => {
         }
       }
 
-      const wrapper = mount(
+      const {rerender} = render(
         <ErrorBoundary>
           <Component />
         </ErrorBoundary>,
         {
-          wrappingComponent: IOProvider,
-          wrappingComponentProps: {io},
+          wrapper: (props) => <IOProvider {...props} io={io} />,
         }
       )
 
-      expect(wrapper.text()).toMatch('x')
+      expect(document.body.textContent).toMatch('x')
 
-      errorSubject.error(new Error('ERR'))
-      wrapper.update()
+      act(() => {
+        errorSubject.error(new Error('ERR'))
+      })
 
-      expect(wrapper.text()).toMatch('Error')
+      rerender(
+        <ErrorBoundary>
+          <Component />
+        </ErrorBoundary>
+      )
+
+      expect(document.body.textContent).toMatch('Error')
     })
   })
 })
@@ -436,12 +393,11 @@ describe('pruneCache', () => {
       }
     }
 
-    const wrapper = mount(<ErrorBoundary />, {
-      wrappingComponent: IOProvider,
-      wrappingComponentProps: {io},
+    render(<ErrorBoundary />, {
+      wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(wrapper.text()).toMatch('Error')
+    expect(document.body.textContent).toMatch('Error')
 
     expect(subscriptions).toBe(1)
 

@@ -1,6 +1,6 @@
-import React, {Component} from 'react'
+import React, {Component, memo} from 'react'
 import {Context} from './context'
-import {isFunction, isObservable} from './util'
+import {isObservable} from './util'
 
 // HOC to provide component with io.
 // Optionally specify io requests to add to prop stream.
@@ -10,37 +10,32 @@ export const withIO = (
   requests = {},
   {startWith: StartComponent, error: ErrorComponent} = {}
 ) => {
-  const isStatic = !isFunction(requests)
-
   return (BaseComponent) => {
+    BaseComponent = memo(BaseComponent)
+
     class WithObservables extends Component {
       static contextType = Context
 
       state = {
-        results: null,
+        renderProps: null,
         error: null,
       }
 
-      UNSAFE_componentWillMount() {
-        this.subscribe(this.props)
+      componentDidMount() {
+        this.subscribe()
       }
 
-      subscribe(props) {
+      subscribe() {
         // istanbul ignore next
         if (this.state.error) return
 
         const io = this.context
 
         const requestEntries = Object.entries(
-          isStatic ? requests : requests({...props, io})
+          typeof requests === 'function'
+            ? requests({...this.props, io})
+            : requests
         )
-
-        // Reset results state.
-        // If we have no requests, we must resolve empty object.
-        // Otherwise we wait until all requests are resolved.
-        this.setState({
-          results: requestEntries.length === 0 ? {} : null,
-        })
 
         const prevRequests = this.requests || {}
         this.requests = Object.fromEntries(requestEntries)
@@ -63,15 +58,7 @@ export const withIO = (
             this.subscriptions[prop] = observable.subscribe({
               next: (value) => {
                 this.results[prop] = value
-
-                if (
-                  Object.values(this.results).length ===
-                  Object.values(this.requests).length
-                ) {
-                  this.setState({
-                    results: this.results,
-                  })
-                }
+                this.queueUpdate()
               },
               error: this.handleError,
             })
@@ -81,6 +68,30 @@ export const withIO = (
         // Important that unsubscribe happens after subscribe.
         // This allows caching of observables.
         this.unsubscribe(prevSubscriptions)
+
+        this.queueUpdate()
+      }
+
+      queueUpdate() {
+        const hasResults =
+          Object.values(this.results).length ===
+          Object.values(this.requests).length
+
+        if (hasResults) {
+          this.setState({
+            renderProps: {
+              ...this.props,
+              ...this.results,
+            },
+          })
+        } else if (StartComponent && this.state.renderProps) {
+          // If we have an explicit start component, we reset back to null
+          // so it can be rendered.
+          // If not, the prev renderProps will be kept until we have results.
+          this.setState({
+            renderProps: null,
+          })
+        }
       }
 
       handleError = (error) => {
@@ -107,9 +118,10 @@ export const withIO = (
         }
       }
 
-      UNSAFE_componentWillReceiveProps(nextProps) {
-        if (!isStatic) {
-          this.subscribe(nextProps)
+      componentDidUpdate(prevProps) {
+        // Only re-subscribe on prop change.
+        if (this.props !== prevProps) {
+          this.subscribe()
         }
       }
 
@@ -117,25 +129,19 @@ export const withIO = (
         this.unsubscribe(this.subscriptions)
       }
 
-      shouldComponentUpdate(nextProps, nextState) {
-        // Only update if we have a start component or results.
-        // This forces child components to wait until dynamic requests are done.
-        return Boolean(StartComponent || nextState.results)
-      }
-
       render() {
-        const {results, error} = this.state
+        const {renderProps, error} = this.state
         const io = this.context
 
         if (error && ErrorComponent) {
           return <ErrorComponent {...this.props} io={io} error={error} />
         }
 
-        if (results) {
-          return <BaseComponent {...this.props} {...results} io={io} />
+        if (renderProps) {
+          return <BaseComponent {...renderProps} io={io} />
         }
 
-        if (!results && StartComponent) {
+        if (!renderProps && StartComponent) {
           return <StartComponent {...this.props} io={io} />
         }
 

@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Move `react` to peer deps, allow newer versions
 - Bump deps
 - Updated bundle
+- Switch tests to RTL
+- Rewrite `withIO` avoiding deprecated Component APIs
 
 ## 5.3.0 - 2023-06-22
 
