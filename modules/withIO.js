@@ -1,6 +1,6 @@
 import React, {Component, memo} from 'react'
 import {Context} from './context'
-import {isObservable} from './util'
+import {isObservable, unsubscribe} from './util'
 
 // HOC to provide component with io.
 // Optionally specify io requests to add to prop stream.
@@ -31,20 +31,17 @@ export const withIO = (
 
         const io = this.context
 
-        const requestEntries = Object.entries(
+        const prevRequests = this.requests || {}
+        this.requests =
           typeof requests === 'function'
             ? requests({...this.props, io})
             : requests
-        )
-
-        const prevRequests = this.requests || {}
-        this.requests = Object.fromEntries(requestEntries)
         const prevSubscriptions = this.subscriptions || {}
         this.subscriptions = {}
         const prevResults = this.results || {}
         this.results = {}
 
-        for (const [prop, request] of requestEntries) {
+        for (const [prop, request] of Object.entries(this.requests)) {
           // Reuse previous subscription and result if possible.
           if (prevRequests[prop] === request && prevSubscriptions[prop]) {
             this.subscriptions[prop] = prevSubscriptions[prop]
@@ -67,7 +64,7 @@ export const withIO = (
 
         // Important that unsubscribe happens after subscribe.
         // This allows caching of observables.
-        this.unsubscribe(prevSubscriptions)
+        unsubscribe(prevSubscriptions)
 
         this.queueUpdate()
       }
@@ -108,14 +105,7 @@ export const withIO = (
           })
         }
 
-        this.unsubscribe(this.subscriptions)
-      }
-
-      unsubscribe(subscriptions) {
-        for (const prop in subscriptions) {
-          subscriptions[prop].unsubscribe()
-          delete subscriptions[prop]
-        }
+        unsubscribe(this.subscriptions)
       }
 
       componentDidUpdate(prevProps) {
@@ -126,7 +116,7 @@ export const withIO = (
       }
 
       componentWillUnmount() {
-        this.unsubscribe(this.subscriptions)
+        unsubscribe(this.subscriptions)
       }
 
       render() {

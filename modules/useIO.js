@@ -82,11 +82,6 @@ const getCacheEntry = (cacheKey, io, path, params) => {
 export const useIO = (path, params) => {
   const io = useContext(Context)
 
-  // istanbul ignore next
-  if (process.env.NODE_ENV !== 'production' && !io) {
-    throw new Error('io not defined')
-  }
-
   if (path === undefined) {
     return io
   }

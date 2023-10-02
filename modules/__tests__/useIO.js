@@ -202,7 +202,6 @@ describe('useIO', () => {
       console.error.mockRestore() // eslint-disable-line
     })
 
-    // Testing suspense is not well supported.
     it('suspends if value does not resolve immediately', async () => {
       const subject = new Subject()
       const io = createIO(() => subject)
@@ -229,6 +228,8 @@ describe('useIO', () => {
         subject.next(1)
         await Promise.resolve()
       })
+
+      expect(document.body.textContent).toBe('1')
     })
 
     it('throws sync error from request', () => {
