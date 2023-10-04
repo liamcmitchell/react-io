@@ -1,4 +1,4 @@
-import React, {Component, memo} from 'react'
+import React, {Component} from 'react'
 import {Context} from './context'
 import {isObservable, unsubscribe} from './util'
 
@@ -11,8 +11,6 @@ export const withIO = (
   {startWith: StartComponent, error: ErrorComponent} = {}
 ) => {
   return (BaseComponent) => {
-    BaseComponent = memo(BaseComponent)
-
     class WithObservables extends Component {
       static contextType = Context
 
