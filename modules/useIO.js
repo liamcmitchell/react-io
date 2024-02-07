@@ -20,21 +20,21 @@ class CacheEntry {
     this.cacheKey = cacheKey
     this.cleanTimeout = undefined
     this.promise = new Promise((resolve) => {
-      this.resolve = resolve
+      this.subscription = observable.subscribe({
+        next: (value) => {
+          this.hasValue = true
+          this.value = value
+          resolve()
+        },
+        error: (error) => {
+          this.hasError = true
+          this.error = error
+          resolve()
+        },
+      })
     })
-    this.subscription = observable.subscribe({
-      next: (value) => {
-        this.hasValue = true
-        this.value = value
-        this.resolve()
-        this.clean()
-      },
-      error: (error) => {
-        this.hasError = true
-        this.error = error
-        this.resolve()
-        this.clean()
-      },
+    this.promise.finally(() => {
+      this.clean()
     })
   }
 
@@ -71,6 +71,11 @@ class CacheEntry {
         this.clean(true)
       }, 100)
     }
+    // If this is not subscribed to, it cannot be cleaned.
+    // We cannot know how long it will take for React to eventually run effects
+    // and subscribe or if it has abandoned render.
+    // API support may eventually come:
+    // https://github.com/reactwg/react-18/discussions/25
   }
 }
 
