@@ -1,10 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
-export const Context = React.createContext(() => {
+export const Context = React.createContext(
   // istanbul ignore next
-  throw new Error('io not defined')
-})
+  () => {
+    throw new Error('io not defined')
+  }
+)
 export const Consumer = Context.Consumer
 export const Provider = Context.Provider
 

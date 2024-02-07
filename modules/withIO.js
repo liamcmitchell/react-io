@@ -91,6 +91,7 @@ export const withIO = (
 
       handleError = (error) => {
         // Only deal with the first error.
+        // istanbul ignore if
         if (this.state.error) return
 
         if (ErrorComponent) {

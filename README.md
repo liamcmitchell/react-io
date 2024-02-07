@@ -89,34 +89,9 @@ export default function Widget() {
 }
 ```
 
-Hooks require that observables are subscribed to optimistically and cached outside of React state. This means there may be cached subscriptions in an orphaned or errored state. `pruneCache()` is available to clean all unused cache entries when needed.
-
-### useIOResources(requests)
-
-Subscribes to multiple resources in parallel.
-Returns a `{loading, value, error}` object for each request.
-Request can be a path string or `[path, params]` array.
-
-```javascript
-import {useIOResources} from 'react-io'
-
-export default function Widget() {
-  const {auth, withParams} = useIOResources({
-    auth: '/auth',
-    withParams: ['/auth', {other: 1}],
-  })
-
-  return auth.loading ? (
-    <div>...loading...</div>
-  ) : auth.error ? (
-    <div>Error: {error.toString()}</div>
-  ) : auth.value ? (
-    <div>{auth.value.username}</div>
-  ) : (
-    <div>Not authorized</div>
-  )
-}
-```
+Hooks require that observables are subscribed to optimistically and cached outside of React state.
+This means there may be cached subscriptions in an orphaned or errored state.
+The cache (`io._cache`) can be deleted if needed.
 
 ### withIO([urls])(WrappedComponent)
 

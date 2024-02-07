@@ -4,6 +4,4 @@ import {withIO} from './withIO'
 export {withIO}
 export const withObservables = withIO
 
-export {useIO, pruneCache} from './useIO'
-
-export {useIOResources} from './useIOResources'
+export {useIO} from './useIO'

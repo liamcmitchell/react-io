@@ -1,13 +1,14 @@
 /* eslint-disable react/prop-types */
 import React, {Suspense} from 'react'
 import {render} from '@testing-library/react'
-import {pruneCache, useIO} from '../useIO'
+import {useIO} from '../useIO'
 import {IOProvider} from '../context'
 import {of, BehaviorSubject, Subject, Observable} from 'rxjs'
 import {createIO} from 'url-io'
 import {suspend} from '../suspense'
 import {act} from 'react-dom/test-utils'
 
+jest.useFakeTimers()
 jest.mock('../suspense')
 
 beforeEach(() => {
@@ -96,31 +97,40 @@ describe('useIO', () => {
   })
 
   it('subscribes to new observable for new request', () => {
-    let subscriptions = 0
-    const io = createIO(({params: {a}}) => {
-      ++subscriptions
-      return a
-    })
+    const subscriptions = {}
+    const io = createIO(
+      ({params: {x}}) =>
+        new Observable((observer) => {
+          subscriptions[x] ??= 0
+          subscriptions[x]++
+          observer.next(x)
+          return () => {
+            subscriptions[x]--
+          }
+        })
+    )
 
-    let renders = 0
-    const Component = ({a}) => {
-      renders++
-      const result = useIO('/path', {a})
+    const Component = ({x}) => {
+      const result = useIO('/path', {x})
 
       return <div>{result}</div>
     }
 
-    const {rerender} = render(<Component a={1} />, {
+    const {rerender} = render(<Component x="a" />, {
       wrapper: (props) => <IOProvider {...props} io={io} />,
     })
 
-    expect(document.body.textContent).toBe('1')
+    expect(subscriptions).toEqual({a: 1})
+    expect(document.body.textContent).toBe('a')
 
-    rerender(<Component a={2} />)
+    rerender(<Component x="b" />)
 
-    expect(renders).toBeGreaterThanOrEqual(2)
-    expect(subscriptions).toBe(2)
-    expect(document.body.textContent).toBe('2')
+    expect(subscriptions).toEqual({a: 1, b: 1})
+    expect(document.body.textContent).toBe('b')
+
+    // Unsubscribes after timeout if no more subscribers.
+    jest.runOnlyPendingTimers()
+    expect(subscriptions).toEqual({a: 0, b: 1})
   })
 
   it('renders immediately if passed a starting value as startWith', async () => {
@@ -347,63 +357,5 @@ describe('useIO', () => {
 
       expect(document.body.textContent).toMatch('Error')
     })
-  })
-})
-
-describe('pruneCache', () => {
-  beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    console.error.mockRestore() // eslint-disable-line
-  })
-
-  test('unsubscribes lost cache entries', async () => {
-    suspend.mockImplementation(() => {
-      return 'SUSPENDED'
-    })
-    let subscriptions = 0
-
-    const io = () =>
-      new Observable(() => {
-        subscriptions++
-        return () => {
-          subscriptions--
-        }
-      })
-
-    const Component = () => {
-      useIO('/path')
-      throw new Error('Optimistic subscription is left hanging.')
-    }
-
-    class ErrorBoundary extends React.Component {
-      state = {hasError: false}
-
-      static getDerivedStateFromError() {
-        return {hasError: true}
-      }
-
-      render() {
-        if (this.state.hasError) {
-          return <div>Error</div>
-        }
-
-        return <Component />
-      }
-    }
-
-    render(<ErrorBoundary />, {
-      wrapper: (props) => <IOProvider {...props} io={io} />,
-    })
-
-    expect(document.body.textContent).toMatch('Error')
-
-    expect(subscriptions).toBe(1)
-
-    pruneCache()
-
-    expect(subscriptions).toBe(0)
   })
 })

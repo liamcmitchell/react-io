@@ -4,7 +4,7 @@ export default {
   input: './modules/index.js',
   output: [
     {
-      file: `dist/react-io.mjs`,
+      file: `dist/react-io.js`,
       format: 'es',
     },
     {

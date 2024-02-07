@@ -2,8 +2,7 @@ import React from 'react'
 import {act, render} from '@testing-library/react'
 import {withIO} from '../withIO'
 import {IOProvider} from '../context'
-import {Observable, of, throwError, Subject} from 'rxjs'
-import {map, mapTo} from 'rxjs/operators'
+import {Observable, of, throwError, Subject, map} from 'rxjs'
 
 const Child = (props) => <div>{JSON.stringify(props)}</div>
 
@@ -186,7 +185,7 @@ describe('withIO', () => {
       // that were used to create them.
       const subject = new Subject()
       const WithObservables = withIO(({outerProp}) => ({
-        innerProp: subject.pipe(mapTo(outerProp)),
+        innerProp: subject.pipe(map(() => outerProp)),
       }))(Child)
 
       const {rerender} = render(<WithObservables outerProp={1} />)
@@ -251,7 +250,7 @@ describe('withIO', () => {
       const subject = new Subject()
       const WithObservables = withIO(
         ({outerProp}) => ({
-          innerProp: subject.pipe(mapTo(outerProp)),
+          innerProp: subject.pipe(map(() => outerProp)),
         }),
         {startWith: StartWith}
       )(Child)

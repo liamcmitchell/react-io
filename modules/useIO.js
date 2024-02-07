@@ -3,15 +3,22 @@ import {Context} from './context'
 import {suspend} from './suspense'
 
 class CacheEntry {
-  constructor(observable, clean) {
+  /**
+   * @param {import('rxjs').Observable} observable
+   * @param {Map<string, CacheEntry>} cache
+   * @param {string} cacheKey
+   **/
+  constructor(observable, cache, cacheKey) {
     this.hasValue = false
     this.value = undefined
     this.hasError = false
     this.error = undefined
+    this.subscribed = false
     this.subscribers = 0
-    this.cleaned = false
     this.observable = observable
-    this.clean = clean
+    this.cache = cache
+    this.cacheKey = cacheKey
+    this.cleanTimeout = undefined
     this.promise = new Promise((resolve) => {
       this.resolve = resolve
     })
@@ -20,60 +27,61 @@ class CacheEntry {
         this.hasValue = true
         this.value = value
         this.resolve()
+        this.clean()
       },
       error: (error) => {
         this.hasError = true
         this.error = error
         this.resolve()
+        this.clean()
       },
     })
   }
 
   subscribe(observer) {
+    clearTimeout(this.cleanTimeout)
+    this.subscribed = true
     this.subscribers++
     const subscription = this.observable.subscribe(observer)
     return () => {
       this.subscribers--
       subscription.unsubscribe()
-      this.checkClean()
-    }
-  }
-
-  checkClean() {
-    if (!this.cleaned && this.subscribers <= 0) {
-      this.subscription.unsubscribe()
       this.clean()
     }
   }
-}
 
-// It is possible that we end up with cache entries with errors or no subscribers.
-// We keep a reference of all caches so we can prune if needed.
-/** @type {Set<Map<string, CacheEntry>} */
-const caches = new Set()
+  clean(force) {
+    clearTimeout(this.cleanTimeout)
 
-export const pruneCache = () => {
-  for (const cache of caches) {
-    for (const [, cacheEntry] of cache) {
-      cacheEntry.checkClean()
+    if (
+      // On server we won't have subscribers so clean immediately.
+      typeof window === 'undefined' ||
+      // If we have reached timeout and still don't have subscriptions, clean.
+      (force && this.subscribers <= 0)
+    ) {
+      this.subscription.unsubscribe()
+      // On client, remove from cache to avoid stale data on next use.
+      // istanbul ignore else
+      if (typeof window !== 'undefined') {
+        this.cache.delete(this.cacheKey)
+      }
+    } else if (this.subscribed && this.subscribers <= 0) {
+      // If we have subscribed, wait a small timeout for resubscription.
+      this.cleanTimeout = setTimeout(() => {
+        this.clean(true)
+      }, 100)
     }
   }
 }
 
 /** @return {CacheEntry} */
 const getCacheEntry = (cacheKey, io, path, params) => {
-  if (!io._cache) {
-    io._cache = new Map()
-    caches.add(io._cache)
-  }
+  io._cache ??= new Map()
   /** @type {Map} */
   const cache = io._cache
 
   if (!cache.has(cacheKey)) {
-    cache.set(
-      cacheKey,
-      new CacheEntry(io(path, params), () => cache.delete(cacheKey))
-    )
+    cache.set(cacheKey, new CacheEntry(io(path, params), cache, cacheKey))
   }
 
   return cache.get(cacheKey)
